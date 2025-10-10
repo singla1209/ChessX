@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chess — Legal Moves + Highlights</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1>Chess — Legal Moves</h1>
+
+  <div class="top-bar">
+    <div id="turn">Turn: White</div>
+    <div id="status">Select a piece</div>
+  </div>
+  <!-- Place inside <body> above the board -->
+<div class="audio-bar">
+  <button id="enable-audio">Enable sound</button>
+  <label><input type="checkbox" id="mute-toggle"> Mute</label>
+  <label>Vol <input type="range" id="vol" min="0" max="1" step="0.05" value="0.6"></label>
+</div>
+
+  <div id="chessboard" aria-label="Chessboard" role="grid"></div>
+
+  <div class="legend">
+    <span class="dot move"></span> legal move
+    <span class="dot capture"></span> capture
+    <span class="dot selected"></span> selected
+  </div>
+
+  <script src="app.js"></script>
+  <script type="module" src="firebase.js"></script>
+</body>
+</html>
