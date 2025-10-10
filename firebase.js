@@ -1,73 +1,78 @@
 
-  // 1) Firebase SDK (use the versions provided by the Firebase console)
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
-  import { getAuth, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
-  import { getFirestore, doc, setDoc, getDoc, onSnapshot, serverTimestamp, updateDoc } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
-  import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js"; // already imported with Auth
-// ...after initializeApp/getAuth...
-  // 2) Paste Firebase config from the Firebase console here
+ // 1) Imports (ES modules)
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+import {
+  getAuth, sendSignInLinkToEmail, isSignInWithEmailLink,
+  signInWithEmailLink, onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+import {
+  getFirestore, doc, setDoc, getDoc, onSnapshot,
+  serverTimestamp, updateDoc
+} from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
-
-  const firebaseConfig = {
-  apiKey: "AIzaSyAh7spDeQk7nG0qzrXf2iA6vK2A2Cztyng",
-    authDomain: "chessx-c94e2.firebaseapp.com",
-    projectId: "chessx-c94e2",
-    storageBucket: "chessx-c94e2.firebasestorage.app",
-    messagingSenderId: "881392331293",
-    appId: "1:881392331293:web:39c747febf59e9321b34f4",
-    measurementId: "G-J4V0NH3HC8"
+// 2) Firebase config (exact values from Console)
+const firebaseConfig = {
+  apiKey: "YOUR_REAL_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_BUCKET",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID",
+  measurementId: "YOUR_MEASUREMENT_ID"
 };
 
-  const returnUrl = location.origin + location.pathname; // works on GitHub Pages paths
-  const actionCodeSettings = { url: returnUrl, handleCodeInApp: true };
+// 3) Initialize SDKs
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
+// 4) Build return URL ONCE (GitHub Pages friendly)
+const returnUrl = `${location.origin}${location.pathname.replace(/index\.html$/, '')}`;
+const actionCodeSettings = { url: returnUrl, handleCodeInApp: true };
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-
-
+// 5) Panels and auth state UI toggle
 const authPanel = document.getElementById('auth-panel');
 const gamePanel = document.getElementById('game-panel');
-
 onAuthStateChanged(auth, (user) => {
   const signedIn = !!user;
-  authPanel.style.display = signedIn ? 'none' : 'block';
-  gamePanel.style.display = signedIn ? 'block' : 'none';
+  if (authPanel && gamePanel) {
+    authPanel.style.display = signedIn ? 'none' : 'block';
+    gamePanel.style.display = signedIn ? 'block' : 'none';
+  }
 });
 
+// 6) Email link handlers (Send / Complete)
+const sendBtn = document.getElementById('send-link');
+const completeBtn = document.getElementById('complete-link');
+const emailInput = document.getElementById('email');
 
-  // 3) Email link auth
-  const sendBtn = document.getElementById('send-link');
-  const completeBtn = document.getElementById('complete-link');
-  const emailInput = document.getElementById('email');
-
-  // GitHub Pages URL where the app is hosted (must be authorized in Firebase Auth)
-  const returnUrl = location.origin + location.pathname; // e.g., https://username.github.io/repo/
-  const actionCodeSettings = {
-    url: returnUrl,
-    handleCodeInApp: true
-  };
-
-  sendBtn.addEventListener('click', async () => {
+sendBtn?.addEventListener('click', async () => {
+  try {
     const email = emailInput.value.trim();
     if(!email) return alert('Enter email');
     localStorage.setItem('emailForSignIn', email);
     await sendSignInLinkToEmail(auth, email, actionCodeSettings);
-    alert('Sign-in link sent to email');
-  });
+    alert('Sign-in link sent');
+  } catch (e) {
+    console.error('sendSignInLinkToEmail failed:', e);
+    alert(e?.code || e?.message || 'Failed to send link');
+  }
+});
 
-  completeBtn.addEventListener('click', async () => {
-    if (isSignInWithEmailLink(auth, window.location.href)) {
-      let email = localStorage.getItem('emailForSignIn');
-      if (!email) email = prompt('Confirm email for sign-in');
-      await signInWithEmailLink(auth, email, window.location.href);
-      localStorage.removeItem('emailForSignIn');
-      alert('Signed in');
-    } else {
-      alert('No email link detected');
-    }
-  });
+completeBtn?.addEventListener('click', async () => {
+  if (isSignInWithEmailLink(auth, window.location.href)) {
+    let email = localStorage.getItem('emailForSignIn');
+    if (!email) email = prompt('Confirm email for sign-in');
+    await signInWithEmailLink(auth, email, window.location.href);
+    localStorage.removeItem('emailForSignIn');
+    alert('Signed in');
+  } else {
+    alert('No email link detected');
+  }
+});
+
+
+
 
   // 4) Game creation / join + real-time sync
   const createBtn = document.getElementById('create-game');
@@ -172,6 +177,7 @@ onAuthStateChanged(auth, (user) => {
   // Auto-join if ?game=ID present
   const qsGame = new URLSearchParams(location.search).get('game');
   if(qsGame) joinGame(qsGame);
+
 
 
 
