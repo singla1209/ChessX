@@ -18,6 +18,10 @@
     measurementId: "G-J4V0NH3HC8"
 };
 
+  const returnUrl = location.origin + location.pathname; // works on GitHub Pages paths
+  const actionCodeSettings = { url: returnUrl, handleCodeInApp: true };
+
+
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
@@ -168,5 +172,6 @@ onAuthStateChanged(auth, (user) => {
   // Auto-join if ?game=ID present
   const qsGame = new URLSearchParams(location.search).get('game');
   if(qsGame) joinGame(qsGame);
+
 
 
