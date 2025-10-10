@@ -455,13 +455,13 @@ import {
 
 // ---- CONFIG: replace the values below with YOUR firebase project config ----
 const firebaseConfig = {
-  apiKey: "REPLACE_WITH_YOURS",
-  authDomain: "REPLACE_WITH_YOURS.firebaseapp.com",
-  databaseURL: "https://REPLACE_WITH_YOURS-default-rtdb.firebaseio.com",
-  projectId: "REPLACE_WITH_YOURS",
-  storageBucket: "REPLACE_WITH_YOURS.appspot.com",
-  messagingSenderId: "REPLACE_WITH_YOURS",
-  appId: "REPLACE_WITH_YOURS"
+  apiKey: "AIzaSyAh7spDeQk7nG0qzrXf2iA6vK2A2Cztyng",
+  authDomain: "chessx-c94e2.firebaseapp.com",
+  projectId: "chessx-c94e2",
+  storageBucket: "chessx-c94e2.firebasestorage.app",
+  messagingSenderId: "881392331293",
+  appId: "1:881392331293:web:39c747febf59e9321b34f4",
+  measurementId: "G-J4V0NH3HC8"
 };
 // ----------------------------------------------------------------------------
 
@@ -869,4 +869,5 @@ async function signOutUser(){
 /* ------------------------------
    END: FIREBASE REALTIME MULTIPLAYER
    ------------------------------ */
+
 
