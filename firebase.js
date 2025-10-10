@@ -26,6 +26,15 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+const urlEl = document.getElementById('game-url');
+function setGameUrl(u){
+  if (!urlEl) return;
+  if (u) { urlEl.textContent = u; urlEl.style.display = 'inline'; }
+  else { urlEl.textContent = ''; urlEl.style.display = 'none'; }
+}
+// hide initially
+setGameUrl('');
+
 // 4) Build return URL ONCE (GitHub Pages friendly)
 const returnUrl = `${location.origin}${location.pathname.replace(/index\.html$/, '')}`;
 const actionCodeSettings = { url: returnUrl, handleCodeInApp: true };
@@ -177,6 +186,7 @@ completeBtn?.addEventListener('click', async () => {
   // Auto-join if ?game=ID present
   const qsGame = new URLSearchParams(location.search).get('game');
   if(qsGame) joinGame(qsGame);
+
 
 
 
