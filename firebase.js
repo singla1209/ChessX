@@ -3,7 +3,8 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
   import { getAuth, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
   import { getFirestore, doc, setDoc, getDoc, onSnapshot, serverTimestamp, updateDoc } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
-
+  import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js"; // already imported with Auth
+// ...after initializeApp/getAuth...
   // 2) Paste Firebase config from the Firebase console here
 
 
@@ -20,6 +21,17 @@
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
+
+
+const authPanel = document.getElementById('auth-panel');
+const gamePanel = document.getElementById('game-panel');
+
+onAuthStateChanged(auth, (user) => {
+  const signedIn = !!user;
+  authPanel.style.display = signedIn ? 'none' : 'block';
+  gamePanel.style.display = signedIn ? 'block' : 'none';
+});
+
 
   // 3) Email link auth
   const sendBtn = document.getElementById('send-link');
@@ -156,4 +168,5 @@
   // Auto-join if ?game=ID present
   const qsGame = new URLSearchParams(location.search).get('game');
   if(qsGame) joinGame(qsGame);
+
 
