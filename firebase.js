@@ -8,13 +8,13 @@
 
 
   const firebaseConfig = {
-  apiKey: "REPLACE",
-  authDomain: "REPLACE.firebaseapp.com",
-  projectId: "REPLACE",
-  storageBucket: "REPLACE.appspot.com",
-  messagingSenderId: "REPLACE",
-  appId: "REPLACE",
-  measurementId: "REPLACE" // if shown
+  apiKey: "AIzaSyAh7spDeQk7nG0qzrXf2iA6vK2A2Cztyng",
+    authDomain: "chessx-c94e2.firebaseapp.com",
+    projectId: "chessx-c94e2",
+    storageBucket: "chessx-c94e2.firebasestorage.app",
+    messagingSenderId: "881392331293",
+    appId: "1:881392331293:web:39c747febf59e9321b34f4",
+    measurementId: "G-J4V0NH3HC8"
 };
 
   const app = initializeApp(firebaseConfig);
@@ -156,3 +156,4 @@
   // Auto-join if ?game=ID present
   const qsGame = new URLSearchParams(location.search).get('game');
   if(qsGame) joinGame(qsGame);
+
