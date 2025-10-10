@@ -124,17 +124,33 @@ completeBtn?.addEventListener('click', async () => {
     // location.href = `mailto:?subject=Chess%20Invite&body=Join:%20${encodeURIComponent(url)}`;
   }
 
-  async function joinGame(id) {
+  async function joinGame(rawId) {
+  const id = (rawId || new URLSearchParams(location.search).get('game') || '').trim();
+  if (!id) return alert('Enter Game ID or open the invite link');
+
+  try {
     gameRef = doc(db, 'games', id);
     const snap = await getDoc(gameRef);
-    if(!snap.exists()) return alert('Game not found');
+    if (!snap.exists()) {
+      alert('Game not found');
+      return;
+    }
     const data = snap.data();
-    // Claim black seat if free, otherwise just spectate
-    if(selfUid && (!data.players?.black || data.players.black === selfUid)) {
+
+    // Claim black seat if free
+    if (selfUid && (!data.players?.black || data.players.black === selfUid)) {
       await updateDoc(gameRef, { 'players.black': selfUid, status: 'live' });
     }
+
     startSync(id);
+    setGameUrl(`${returnUrl}?game=${id}`);
+    alert('Joined game');
+  } catch (e) {
+    console.error('joinGame error:', e);
+    alert(e?.code || e?.message || 'Join failed');
   }
+}
+
 
   function startSync(id) {
     // Stop previous listener
@@ -186,6 +202,7 @@ completeBtn?.addEventListener('click', async () => {
   // Auto-join if ?game=ID present
   const qsGame = new URLSearchParams(location.search).get('game');
   if(qsGame) joinGame(qsGame);
+
 
 
 
