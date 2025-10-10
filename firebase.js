@@ -12,13 +12,13 @@ import {
 
 // 2) Firebase config (exact values from Console)
 const firebaseConfig = {
-  apiKey: "YOUR_REAL_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_BUCKET",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID",
-  measurementId: "YOUR_MEASUREMENT_ID"
+   apiKey: "AIzaSyAh7spDeQk7nG0qzrXf2iA6vK2A2Cztyng",
+  authDomain: "chessx-c94e2.firebaseapp.com",
+  projectId: "chessx-c94e2",
+  storageBucket: "chessx-c94e2.firebasestorage.app",
+  messagingSenderId: "881392331293",
+  appId: "1:881392331293:web:39c747febf59e9321b34f4",
+  measurementId: "G-J4V0NH3HC8"
 };
 
 // 3) Initialize SDKs
@@ -177,6 +177,7 @@ completeBtn?.addEventListener('click', async () => {
   // Auto-join if ?game=ID present
   const qsGame = new URLSearchParams(location.search).get('game');
   if(qsGame) joinGame(qsGame);
+
 
 
 
