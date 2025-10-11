@@ -1,82 +1,54 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Chess — Online</title>
+  <title>Chess — Legal Moves + Highlights</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="root">
 
-    <!-- LEFT: Auth / Players -->
-    <aside class="left-panel">
-      <div id="auth-panel" class="card">
-        <h3>Sign in</h3>
-        <input id="email" type="email" placeholder="email@example.com" />
-        <div class="row">
-          <button id="send-link">Send sign-in link</button>
-          <button id="complete-link">Complete sign-in</button>
-        </div>
-        <div id="signed-as" class="muted"></div>
-        <hr/>
-        <div id="presence-status" class="muted">Not signed in</div>
-      </div>
+  <!-- Auth panel (shown first) -->
+<div id="auth-panel">
+  <input id="email" type="email" placeholder="email@example.com" />
+  <button id="send-link">Send sign-in link</button>
+  <button id="complete-link">Complete sign-in</button>
+</div>
 
-      <div id="players-panel" class="card" style="display:none">
-        <h3>Online players</h3>
-        <div id="players-list">—</div>
-      </div>
+<!-- Game panel (hidden until signed in) -->
+<div id="game-panel" style="display:none">
+  <div class="bar">
+    <button id="create-game">Create game</button>
+    <input id="join-id" placeholder="Game ID" />
+    <button id="join-game">Join game</button>
+    <span id="game-url"></span>
+  </div>
+  <div id="chessboard"></div>
+</div>
 
-      <div id="requests-panel" class="card" style="display:none">
-        <h3>Incoming requests</h3>
-        <div id="incoming-requests">No requests</div>
-      </div>
-    </aside>
+  <h1>Chess — Legal Moves</h1>
 
-    <!-- RIGHT: Game area -->
-    <main class="main-panel">
-      <div id="game-panel" class="card" style="display:none">
-        <div class="bar">
-          <button id="create-game">Create game</button>
-          <input id="join-id" placeholder="Paste Game ID to join" />
-          <button id="join-game">Join game</button>
-          <span id="game-url" class="muted"></span>
-        </div>
+  <div class="top-bar">
+    <div id="turn">Turn: White</div>
+    <div id="status">Select a piece</div>
+  </div>
+  <!-- Place inside <body> above the board -->
+<div class="audio-bar">
+  <button id="enable-audio">Enable sound</button>
+  <label><input type="checkbox" id="mute-toggle"> Mute</label>
+  <label>Vol <input type="range" id="vol" min="0" max="1" step="0.05" value="0.6"></label>
+</div>
 
-        <div class="top-bar">
-          <div id="turn">Turn: White</div>
-          <div id="status">Select a piece</div>
-        </div>
+  <div id="chessboard" aria-label="Chessboard" role="grid"></div>
 
-        <div class="board-and-controls">
-          <div id="chessboard" aria-label="Chessboard" role="grid"></div>
-
-          <div class="controls">
-            <div class="legend">
-              <span class="dot move"></span> legal move
-              <span class="dot capture"></span> capture
-              <span class="dot selected"></span> selected
-            </div>
-            <div class="game-info">
-              <div><strong>Game ID:</strong> <span id="current-game-id">—</span></div>
-              <div><strong>Your colour:</strong> <span id="my-colour">—</span></div>
-              <div><button id="leave-game">Leave game</button></div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      <div id="not-signed" class="muted">Sign in to play online</div>
-    </main>
+  <div class="legend">
+    <span class="dot move"></span> legal move
+    <span class="dot capture"></span> capture
+    <span class="dot selected"></span> selected
   </div>
 
-   <script type="module" src="firebase.js"></script>
-
-  <script type="module" src="app.js"></script>
- 
+  <script src="app.js"></script>
+  <script type="module" src="firebase.js"></script>
 </body>
 </html>
-
 
