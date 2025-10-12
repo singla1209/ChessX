@@ -3,6 +3,9 @@ const turnEl = document.getElementById('turn');
 const statusEl = document.getElementById('status');
 const startBtn = document.getElementById('start-game');
 const restartBtn = document.getElementById('restart-game');
+// Alias the UMD global exposed by the script tag
+const JCE = window['js-chess-engine'];  // <- add here, near the top of app.js
+
 
 // Unicode for display
 const PIECES = {
@@ -84,12 +87,13 @@ let legalTargets = new Set();
 let gameOver = false;
 
 // AI config (local play only)
-window.aiMode = false;        // off until Start Game
-window.aiSide = 'black';      // AI plays Black; human plays White
-window.aiLevel = 2;           // 0..3 per package docs
+let gameStarted = false;       // Start button flips this
+window.aiMode = false;         // AI off until Start
+window.aiSide = 'black';       // AI plays Black
+window.aiLevel = 2;            // 0..3
 
-// js-chess-engine (UMD global)
-let aiGame = null;            // created on Start/Restart
+// js-chess-engine (UMD global) - created on Start/Restart
+let aiGame = null;
 
 function rc(i){ return [Math.floor(i/8), i%8]; }
 function idx(r,c){ return r*8 + c; }
@@ -131,9 +135,10 @@ function render(){
 
 function onSquareClick(e){
   if(gameOver) return;
-  if (!window.aiMode && !gameStarted) return; // ignore before Start Game
+
   const i = parseInt(e.currentTarget.dataset.index,10);
 
+  // Valid move to a highlighted square
   if(selected !== null && legalTargets.has(i)){
     const fromBefore = selected;
     movePiece(selected, i);
@@ -143,10 +148,12 @@ function onSquareClick(e){
     return;
   }
 
+  // Clicking elsewhere while a square is selected
   if(selected !== null && !legalTargets.has(i)){
     playSfx('illegal');
   }
 
+  // Select a piece
   const pc = board[i];
   if(pc && ((whiteToMove && isWhite(pc)) || (!whiteToMove && isBlack(pc)))){
     selected = i;
@@ -343,6 +350,7 @@ function generatePseudoMoves(i){
   }
 
   if(t === 'n'){
+    // ASCII hyphens only (no Unicode minus)
     const deltas = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
     for(const [dr,dc] of deltas){
       const rr=r+dr, cc=c+dc;
@@ -417,7 +425,7 @@ function allLegalPairsForTurn(){
 }
 
 function onHumanMoveApplied(fromIdx, toIdx, promotion){
-  if (!aiGame) return;
+  if (!aiGame) return; // no AI until Start is clicked
   const FROM = idxToAlg(fromIdx).toUpperCase();
   const TO   = idxToAlg(toIdx).toUpperCase();
   try {
@@ -473,8 +481,6 @@ async function maybeAIMove(){
 }
 
 // Start/Restart flows
-let gameStarted = false;
-
 function resetPosition(){
   board = START_BOARD.slice();
   whiteToMove = true;
@@ -485,23 +491,27 @@ function resetPosition(){
   render();
 }
 
-startBtn.addEventListener('click', () => {
+// Button listeners (ensure engine script loaded first)
+startBtn?.addEventListener('click', () => {
+  if (typeof window['js-chess-engine'] === 'undefined') { alert('AI engine failed to load'); return; }
   gameStarted = true;
   window.aiMode = true;
-  window.aiSide = 'black';       // human plays White
-  window.aiLevel = 2;            // tweak 0..3
-  aiGame = new jsChessEngine.Game();
+  window.aiSide = 'black';
+  window.aiLevel = 2;
+  aiGame = new JCE.Game();   // was: new jsChessEngine.Game()
   resetPosition();
   playSfx('gameStart');
 });
 
-restartBtn.addEventListener('click', () => {
+restartBtn?.addEventListener('click', () => {
+  if (typeof window['js-chess-engine'] === 'undefined') { alert('AI engine failed to load'); return; }
   gameStarted = true;
-  window.aiMode = true;          // keep vs AI on restart
-  aiGame = new jsChessEngine.Game();
+  window.aiMode = true;
+  aiGame = new JCE.Game();   // was: new jsChessEngine.Game()
   resetPosition();
   playSfx('gameStart');
 });
 
-// Initial render (shows board, but disabled until Start)
+
+// Initial render (board visible immediately; AI activates after Start)
 render();
