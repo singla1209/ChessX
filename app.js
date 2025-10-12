@@ -8,7 +8,7 @@ const JCE = window['js-chess-engine'];  // <- add here, near the top of app.js
 
 
 // Unicode for display
-const PIECES = {
+const PIECES ={
   'r':'♜','n':'♞','b':'♝','q':'♛','k':'♚','p':'♟',
   'R':'♖','N':'♘','B':'♗','Q':'♕','K':'♔','P':'♙'
 };
@@ -85,6 +85,17 @@ let whiteToMove = true;
 let selected = null;
 let legalTargets = new Set();
 let gameOver = false;
+// Last move highlight
+let lastFrom = null;
+let lastTo = null;
+// Promotion UI state
+const promoEl = document.getElementById('promotion');
+let promotionPending = false;
+let pendingFrom = null;
+let pendingTo = null;
+let pendingIsWhite = null;
+
+
 
 // AI config (local play only)
 let gameStarted = false;       // Start button flips this
@@ -104,12 +115,77 @@ function sameColor(a,b){ if(!a || !b) return false; return isWhite(a) === isWhit
 function empty(i){ return !board[i]; }
 function isKing(pc){ return pc === 'K' || pc === 'k'; }
 
+function needsPromotion(from, to){
+  const moving = board[from];
+  if (moving !== 'P' && moving !== 'p') return false;
+  const [tr] = rc(to);
+  return (moving === 'P' && tr === 0) || (moving === 'p' && tr === 7);
+}
+
+
+// Promotion UI: open/close + finalize
+function openPromotion(from, to){
+  promotionPending = true;
+  pendingFrom = from;
+  pendingTo = to;
+  pendingIsWhite = isWhite(board[from]);
+
+  // Configure buttons per side (uppercase for White, lowercase for Black)
+  const buttons = promoEl.querySelectorAll('.promo-btn');
+  buttons.forEach(btn => {
+    const base = btn.dataset.piece; // 'q','r','b','n'
+    btn.dataset.apply = pendingIsWhite ? base.toUpperCase() : base.toLowerCase();
+  });
+
+  promoEl.style.display = 'flex';
+  statusEl.textContent = 'Choose promotion piece';
+}
+
+function closePromotion(){
+  promotionPending = false;
+  pendingFrom = null;
+  pendingTo = null;
+  pendingIsWhite = null;
+  promoEl.style.display = 'none';
+}
+
+// One delegated listener for all 4 buttons on the overlay
+promoEl.addEventListener('click', (e) => {
+  const t = e.target;
+  if (!t.classList.contains('promo-btn')) return;
+  const letter = t.dataset.apply; // 'Q','R','B','N' or lowercase for Black
+  finalizePromotion(letter);
+});
+
+function finalizePromotion(letter){
+  if (!promotionPending) return;
+  const from = pendingFrom;
+  const to = pendingTo;
+
+  // Apply the move with explicit promotion, then sync AI and redraw
+  movePiece(from, to, letter);
+  onHumanMoveApplied(from, to, letter);
+
+  closePromotion();
+  clearSelection();
+  render();
+}
+
+
 function render(){
   boardEl.innerHTML = '';
   for(let i=0;i<64;i++){
     const [r,c] = rc(i);
     const sq = document.createElement('div');
+
+ 
+
     sq.className = 'square ' + (((r+c)&1)===0 ? 'light' : 'dark');
+
+    if (i === lastFrom || i === lastTo) {
+     sq.classList.add('last-move');
+    }
+
     sq.dataset.index = i;
 
     if(i === selected) sq.classList.add('selected');
@@ -141,6 +217,14 @@ function onSquareClick(e){
   // Valid move to a highlighted square
   if(selected !== null && legalTargets.has(i)){
     const fromBefore = selected;
+
+    // If this move is a promotion, open UI and return
+    if (needsPromotion(fromBefore, i)) {
+    openPromotion(fromBefore, i);
+    return;
+  }
+
+  // Normal (non-promotion) flow
     movePiece(selected, i);
     onHumanMoveApplied(fromBefore, i); // sync AI + maybe reply
     clearSelection();
@@ -173,17 +257,36 @@ function clearSelection(){
   if(!gameOver) statusEl.textContent = 'Select a piece';
 }
 
-function movePiece(from, to){
+// Replace your existing movePiece with this promotion-aware version
+function movePiece(from, to, promotion){
   const moving = board[from];
   const captured = board[to];
 
-  board[to] = moving;
+  // Last-move highlight
+  lastFrom = from;
+  lastTo = to;
+
+  // Decide which piece ends up on the destination (handle promotion)
+  let placed = moving;
+  const [tr] = rc(to);
+  const promoteWhite = (moving === 'P' && tr === 0);
+  const promoteBlack = (moving === 'p' && tr === 7);
+  if (promoteWhite || promoteBlack) {
+    // If a promotion letter was provided (Q/R/B/N or q/r/b/n), use it; otherwise auto-queen
+    placed = promotion ? String(promotion) : (moving === 'P' ? 'Q' : 'q');
+  }
+
+  // Apply move on board
+  board[to] = placed;
   board[from] = '';
+
+  // Toggle turn
   whiteToMove = !whiteToMove;
 
-  if(captured) playSfx('capture');
-  else playSfx('move');
+  // Sounds
+  if (captured) playSfx('capture'); else playSfx('move');
 
+  // Check/End detection
   const oppWhite = whiteToMove;
   const oppInCheck = inCheck(oppWhite);
   const oppHasMoves = sideHasAnyLegalMoves(oppWhite);
@@ -203,9 +306,9 @@ function movePiece(from, to){
   }
 
   if(oppInCheck) playSfx('check');
-
   statusEl.textContent = oppInCheck ? 'Check!' : 'Moved';
 }
+
 
 // ---------- Rules ----------
 function legalMoves(i){
@@ -488,6 +591,11 @@ function resetPosition(){
   legalTargets = new Set();
   gameOver = false;
   statusEl.textContent = 'Select a piece';
+  // Clear last-move highlight
+  lastFrom = null;
+  lastTo = null;
+  // Close promotion overlay if open
+  if (promotionPending) closePromotion();
   render();
 }
 

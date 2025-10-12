@@ -22,7 +22,7 @@
   </div>
 
   <div class="top-bar">
-    <button id="start-game" type="button">Start Game</button>
+    <button id="start-game" type="button">Start Game with Computer</button>
     <button id="restart-game" type="button">Restart</button>
   </div>
 
@@ -33,6 +33,19 @@
     <span class="dot capture"></span> capture
     <span class="dot selected"></span> selected
   </div>
+  <!-- Pawn promotion overlay -->
+<div id="promotion" class="promo-overlay" style="display:none" aria-modal="true" role="dialog">
+  <div class="promo-box">
+    <div class="promo-title">Promote pawn</div>
+    <div class="promo-buttons">
+      <button class="promo-btn" data-piece="q">Queen</button>
+      <button class="promo-btn" data-piece="r">Rook</button>
+      <button class="promo-btn" data-piece="b">Bishop</button>
+      <button class="promo-btn" data-piece="n">Knight</button>
+    </div>
+  </div>
+</div>
+
 
   <!-- Built-in AI engine (browser UMD) -->
   <script src="https://cdn.jsdelivr.net/npm/js-chess-engine@1.0.3/dist/js-chess-engine.min.js"></script>
