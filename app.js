@@ -1,6 +1,8 @@
 const boardEl = document.getElementById('chessboard');
 const turnEl = document.getElementById('turn');
 const statusEl = document.getElementById('status');
+const startBtn = document.getElementById('start-game');
+const restartBtn = document.getElementById('restart-game');
 
 // Unicode for display
 const PIECES = {
@@ -8,8 +10,8 @@ const PIECES = {
   'R':'♖','N':'♘','B':'♗','Q':'♕','K':'♔','P':'♙'
 };
 
-// 0..63 board, initial setup
-let board = [
+// Initial position
+const START_BOARD = [
   'r','n','b','q','k','b','n','r',
   'p','p','p','p','p','p','p','p',
   '','','','','','','','',
@@ -20,7 +22,6 @@ let board = [
   'R','N','B','Q','K','B','N','R'
 ];
 
-
 // --------- Sound Manager ---------
 const SFX = {
   move: new Audio('sounds/move-self.mp3'),
@@ -28,10 +29,9 @@ const SFX = {
   check: new Audio('sounds/check.mp3'),
   gameStart: new Audio('sounds/game-start.mp3'),
   gameEnd: new Audio('sounds/game-end.mp3'),
-  illegal: new Audio('sounds/illegal.mp3') // optional
+  illegal: new Audio('sounds/illegal.mp3')
 };
 
-// Preload and default volume
 let muted = false;
 let volume = 0.6;
 for (const k in SFX){
@@ -47,18 +47,16 @@ function setVolume(v){
   volume = v;
   for (const k in SFX) SFX[k].volume = volume;
 }
-
 function playSfx(name){
   const a = SFX[name];
   if(!a || muted) return;
-  try { a.currentTime = 0; a.play(); } catch(e) { /* ignore */ }
+  try { a.currentTime = 0; a.play(); } catch(e) {}
 }
 
-// Autoplay unlock: call after any user gesture
+// Autoplay unlock
 let audioUnlocked = false;
 function unlockAudioOnce(){
   if(audioUnlocked) return;
-  // Attempt a silent prime to satisfy autoplay policies
   const a = SFX.move;
   const wasMuted = a.muted;
   a.muted = true;
@@ -69,28 +67,29 @@ function unlockAudioOnce(){
     audioUnlocked = true;
     playSfx('gameStart');
   }).catch(()=>{
-    // Fallback: mark unlocked after gesture even if play promise rejected
     audioUnlocked = true;
     playSfx('gameStart');
   });
 }
-
-// Wire controls
-const btnEnable = document.getElementById('enable-audio');
-const toggleMute = document.getElementById('mute-toggle');
-const vol = document.getElementById('vol');
-
-btnEnable?.addEventListener('click', unlockAudioOnce);
+document.getElementById('enable-audio')?.addEventListener('click', unlockAudioOnce);
 document.addEventListener('pointerdown', unlockAudioOnce, { once: true });
+document.getElementById('mute-toggle')?.addEventListener('change', e => setMuted(e.target.checked));
+document.getElementById('vol')?.addEventListener('input', e => setVolume(parseFloat(e.target.value)));
 
-toggleMute?.addEventListener('change', e => setMuted(e.target.checked));
-vol?.addEventListener('input', e => setVolume(parseFloat(e.target.value)));
-
-
+// Game state
+let board = START_BOARD.slice();
 let whiteToMove = true;
 let selected = null;
 let legalTargets = new Set();
 let gameOver = false;
+
+// AI config (local play only)
+window.aiMode = false;        // off until Start Game
+window.aiSide = 'black';      // AI plays Black; human plays White
+window.aiLevel = 2;           // 0..3 per package docs
+
+// js-chess-engine (UMD global)
+let aiGame = null;            // created on Start/Restart
 
 function rc(i){ return [Math.floor(i/8), i%8]; }
 function idx(r,c){ return r*8 + c; }
@@ -132,16 +131,18 @@ function render(){
 
 function onSquareClick(e){
   if(gameOver) return;
+  if (!window.aiMode && !gameStarted) return; // ignore before Start Game
   const i = parseInt(e.currentTarget.dataset.index,10);
 
   if(selected !== null && legalTargets.has(i)){
+    const fromBefore = selected;
     movePiece(selected, i);
+    onHumanMoveApplied(fromBefore, i); // sync AI + maybe reply
     clearSelection();
     render();
     return;
   }
 
-  // If clicking a non-legal target while something is selected, play illegal
   if(selected !== null && !legalTargets.has(i)){
     playSfx('illegal');
   }
@@ -159,7 +160,6 @@ function onSquareClick(e){
   render();
 }
 
-
 function clearSelection(){
   selected = null;
   legalTargets.clear();
@@ -174,7 +174,6 @@ function movePiece(from, to){
   board[from] = '';
   whiteToMove = !whiteToMove;
 
-  // Play capture or move sound first
   if(captured) playSfx('capture');
   else playSfx('move');
 
@@ -196,15 +195,12 @@ function movePiece(from, to){
     return;
   }
 
-  // If game continues, play check if applicable
   if(oppInCheck) playSfx('check');
 
   statusEl.textContent = oppInCheck ? 'Check!' : 'Moved';
 }
 
-
-// ---------- Move generation and rule checks ----------
-
+// ---------- Rules ----------
 function legalMoves(i){
   const pc = board[i];
   if(!pc) return [];
@@ -214,7 +210,6 @@ function legalMoves(i){
   const results = [];
 
   for(const j of pseudo){
-    // forbid capturing a king explicitly
     if(board[j] && isKing(board[j])) continue;
 
     const moving = board[i];
@@ -251,11 +246,10 @@ function findKingIndex(whiteSide){
 
 function inCheck(whiteSide){
   const k = findKingIndex(whiteSide);
-  if(k === -1) return true; // should never happen due to no-king-capture rule
+  if(k === -1) return true;
   return squareAttackedBy(k, !whiteSide);
 }
 
-// Is square i attacked by side byWhite?
 function squareAttackedBy(i, byWhite){
   const [r,c] = rc(i);
 
@@ -274,7 +268,7 @@ function squareAttackedBy(i, byWhite){
     }
   }
 
-  // Knight attacks
+  // Knight
   const kD = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
   for(const [dr,dc] of kD){
     const rr=r+dr, cc=c+dc;
@@ -283,7 +277,7 @@ function squareAttackedBy(i, byWhite){
     if(byWhite ? p==='N' : p==='n') return true;
   }
 
-  // King attacks (adjacent)
+  // King
   for(let dr=-1;dr<=1;dr++){
     for(let dc=-1;dc<=1;dc++){
       if(dr===0 && dc===0) continue;
@@ -294,7 +288,7 @@ function squareAttackedBy(i, byWhite){
     }
   }
 
-  // Sliding: bishops/queens (diagonals)
+  // Bishops/Queens (diagonals)
   const diag = [[-1,-1],[-1,1],[1,-1],[1,1]];
   for(const [dr,dc] of diag){
     let rr=r+dr, cc=c+dc;
@@ -308,7 +302,7 @@ function squareAttackedBy(i, byWhite){
     }
   }
 
-  // Sliding: rooks/queens (orthogonals)
+  // Rooks/Queens (orthogonals)
   const ortho = [[-1,0],[1,0],[0,-1],[0,1]];
   for(const [dr,dc] of ortho){
     let rr=r+dr, cc=c+dc;
@@ -325,7 +319,6 @@ function squareAttackedBy(i, byWhite){
   return false;
 }
 
-// Pseudo-legal moves (no self-check filtering)
 function generatePseudoMoves(i){
   const pc = board[i];
   if(!pc) return [];
@@ -390,17 +383,125 @@ function generatePseudoMoves(i){
     }
   }
 
-  // disallow landing on a king square at the pseudo level
   moves = moves.filter(j => !board[j] || !isKing(board[j]));
   return moves;
 }
 
-window.board = board;
-window.whiteToMove = whiteToMove;
-window.render = render;
-window.movePiece = movePiece; // must exist before firebase.js wraps it
+/* ===== AI: js-chess-engine integration ===== */
+const FILES = ['a','b','c','d','e','f','g','h'];
+function idxToAlg(i){
+  const r = Math.floor(i / 8);
+  const c = i % 8;
+  return FILES[c] + (8 - r);
+}
+function algToIdx(alg){
+  const file = alg[0].toLowerCase();
+  const rank = parseInt(alg[1], 10);
+  const c = FILES.indexOf(file);
+  const r = 8 - rank;
+  return r * 8 + c;
+}
 
+function allLegalPairsForTurn(){
+  const wantWhite = whiteToMove;
+  const pairs = [];
+  for (let i = 0; i < 64; i++) {
+    const pc = board[i];
+    if (!pc) continue;
+    if (wantWhite && !isWhite(pc)) continue;
+    if (!wantWhite && !isBlack(pc)) continue;
+    const moves = legalMoves(i);
+    for (const j of moves) pairs.push([i, j]);
+  }
+  return pairs;
+}
 
+function onHumanMoveApplied(fromIdx, toIdx, promotion){
+  if (!aiGame) return;
+  const FROM = idxToAlg(fromIdx).toUpperCase();
+  const TO   = idxToAlg(toIdx).toUpperCase();
+  try {
+    aiGame.move(FROM, TO, promotion ? String(promotion).toUpperCase() : undefined);
+  } catch (e) {
+    console.warn('AI sync warning:', e);
+  }
+  maybeAIMove();
+}
 
+async function maybeAIMove(){
+  if (!window.aiMode || gameOver) return;
+  const turnSide = whiteToMove ? 'white' : 'black';
+  if (turnSide !== window.aiSide) return;
 
+  const legalPairs = allLegalPairsForTurn();
+  if (legalPairs.length === 0) return;
+
+  await new Promise(r => setTimeout(r, 120));
+
+  let chosen = null;
+
+  try {
+    const engineMap = aiGame.aiMove(window.aiLevel);   // e.g., { "E7": "E5" }
+    const [[FROM, TO]] = Object.entries(engineMap);
+    const fromIdx = algToIdx(FROM);
+    const toIdx   = algToIdx(TO);
+    if (legalPairs.some(([f,t]) => f===fromIdx && t===toIdx)) {
+      chosen = [fromIdx, toIdx];
+    }
+  } catch (e) {
+    // fall back below
+  }
+
+  if (!chosen) {
+    let capture = null;
+    for (const [f, t] of legalPairs) {
+      if (board[t]) { capture = [f, t]; break; }
+    }
+    chosen = capture || legalPairs[0];
+    try {
+      const FROM = idxToAlg(chosen[0]).toUpperCase();
+      const TO   = idxToAlg(chosen[1]).toUpperCase();
+      aiGame.move(FROM, TO);
+    } catch (e) {
+      console.warn('AI fallback sync warning:', e);
+    }
+  }
+
+  const [fromIdx, toIdx] = chosen;
+  movePiece(fromIdx, toIdx);
+  render();
+}
+
+// Start/Restart flows
+let gameStarted = false;
+
+function resetPosition(){
+  board = START_BOARD.slice();
+  whiteToMove = true;
+  selected = null;
+  legalTargets = new Set();
+  gameOver = false;
+  statusEl.textContent = 'Select a piece';
+  render();
+}
+
+startBtn.addEventListener('click', () => {
+  gameStarted = true;
+  window.aiMode = true;
+  window.aiSide = 'black';       // human plays White
+  window.aiLevel = 2;            // tweak 0..3
+  aiGame = new jsChessEngine.Game();
+  resetPosition();
+  playSfx('gameStart');
+});
+
+restartBtn.addEventListener('click', () => {
+  gameStarted = true;
+  window.aiMode = true;          // keep vs AI on restart
+  aiGame = new jsChessEngine.Game();
+  resetPosition();
+  playSfx('gameStart');
+});
+
+// Initial render (shows board, but disabled until Start)
 render();

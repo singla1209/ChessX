@@ -3,41 +3,28 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Chess — Legal Moves + Highlights</title>
+  <title>Chess — Play vs Computer</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-
-  <!-- Auth panel (shown first) -->
-<div id="auth-panel">
-  <input id="email" type="email" placeholder="email@example.com" />
-  <button id="send-link">Send sign-in link</button>
-  <button id="complete-link">Complete sign-in</button>
-</div>
-
-<!-- Game panel (hidden until signed in) -->
-<div id="game-panel" style="display:none">
-  <div class="bar">
-    <button id="create-game">Create game</button>
-    <input id="join-id" placeholder="Game ID" />
-    <button id="join-game">Join game</button>
-    <span id="game-url"></span>
-  </div>
-  <div id="chessboard"></div>
-</div>
 
   <h1>Chess — Legal Moves</h1>
 
   <div class="top-bar">
     <div id="turn">Turn: White</div>
-    <div id="status">Select a piece</div>
+    <div id="status">Click Start Game</div>
   </div>
-  <!-- Place inside <body> above the board -->
-<div class="audio-bar">
-  <button id="enable-audio">Enable sound</button>
-  <label><input type="checkbox" id="mute-toggle"> Mute</label>
-  <label>Vol <input type="range" id="vol" min="0" max="1" step="0.05" value="0.6"></label>
-</div>
+
+  <div class="audio-bar">
+    <button id="enable-audio">Enable sound</button>
+    <label><input type="checkbox" id="mute-toggle"> Mute</label>
+    <label>Vol <input type="range" id="vol" min="0" max="1" step="0.05" value="0.6"></label>
+  </div>
+
+  <div class="top-bar">
+    <button id="start-game" type="button">Start Game</button>
+    <button id="restart-game" type="button">Restart</button>
+  </div>
 
   <div id="chessboard" aria-label="Chessboard" role="grid"></div>
 
@@ -47,8 +34,10 @@
     <span class="dot selected"></span> selected
   </div>
 
+  <!-- Built-in AI engine (browser UMD) -->
+  <script src="https://cdn.jsdelivr.net/npm/js-chess-engine@1.0.3/dist/js-chess-engine.min.js"></script>
+
+  <!-- Game logic -->
   <script src="app.js"></script>
-  <script type="module" src="firebase.js"></script>
 </body>
 </html>
-
