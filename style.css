@@ -1,6 +1,6 @@
 :root{
-  --light:#f0d9b5;
-  --dark:#b58863;
+  --light: #D5E0E6;
+  --dark:#91ABBA;
   --accent:#4c9fff;
   --capture:#ff6b6b;
   --select:#ffd166;
@@ -144,3 +144,21 @@ h1{
   background: #f7f7f7;
 }
 .promo-btn:hover { background: #f0f0f0; }
+
+/* To create button colorfull */
+  .color-btn{
+    --c1:#91ABBA; /* dark */
+    --c2:#D5E0E6; /* light */
+    padding:.7rem 1.2rem;
+    border:0;
+    border-radius:999px;
+    color:#0a2233;
+    font:600 15px/1.1 system-ui, sans-serif;
+    background:linear-gradient(135deg,var(--c1),var(--c2));
+    box-shadow:0 10px 20px rgba(0,0,0,.15), inset 0 1px 0 rgba(255,255,255,.6);
+    transition:transform .15s, box-shadow .2s, filter .2s;
+    cursor:pointer;
+  }
+  .color-btn:hover{ transform:translateY(-2px); filter:saturate(1.15); }
+  .color-btn:active{ transform:none; box-shadow:0 6px 12px rgba(0,0,0,.2); }
+
