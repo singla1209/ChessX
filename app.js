@@ -85,6 +85,13 @@ let whiteToMove = true;
 let selected = null;
 let legalTargets = new Set();
 let gameOver = false;
+
+// Castling rights (declare once here)
+let canCastleWK = true; // White short (king side)
+let canCastleWQ = true; // White long  (queen side)
+let canCastleBK = true; // Black short
+let canCastleBQ = true; // Black long
+
 // Last move highlight
 let lastFrom = null;
 let lastTo = null;
@@ -97,6 +104,8 @@ let pendingIsWhite = null;
 
 
 
+
+
 // AI config (local play only)
 let gameStarted = false;       // Start button flips this
 window.aiMode = false;         // AI off until Start
@@ -106,6 +115,19 @@ window.aiLevel = 2;            // 0..3
 // js-chess-engine (UMD global) - created on Start/Restart
 let aiGame = null;
 
+// Timing controls for AI pacing
+const AI_THINK_MS = 2000;        // pause before the AI selects a move (800–2000 feels natural)
+const AI_AFTER_MOVE_MS = 1000;    // pause after the AI moves to let it be seen
+
+// Small helper
+const delay = (ms) => new Promise(r => setTimeout(r, ms));
+
+// Optional: UI lock state
+let engineThinking = false;
+
+
+
+
 function rc(i){ return [Math.floor(i/8), i%8]; }
 function idx(r,c){ return r*8 + c; }
 function inB(r,c){ return r>=0 && r<8 && c>=0 && c<8; }
@@ -114,6 +136,38 @@ function isBlack(pc){ return pc && pc === pc.toLowerCase(); }
 function sameColor(a,b){ if(!a || !b) return false; return isWhite(a) === isWhite(b); }
 function empty(i){ return !board[i]; }
 function isKing(pc){ return pc === 'K' || pc === 'k'; }
+
+
+
+function updateCastlingRights(from, to, moving, captured){
+  // King moved
+  if (moving === 'K') { canCastleWK = false; canCastleWQ = false; }
+  if (moving === 'k') { canCastleBK = false; canCastleBQ = false; }
+
+  // Rook moved from its original square
+  const fromAlg = idxToAlg(from).toUpperCase();
+  if (moving === 'R') {
+    if (fromAlg === 'H1') canCastleWK = false;
+    if (fromAlg === 'A1') canCastleWQ = false;
+  }
+  if (moving === 'r') {
+    if (fromAlg === 'H8') canCastleBK = false;
+    if (fromAlg === 'A8') canCastleBQ = false;
+  }
+
+  // Rook captured on its original square
+  const toAlg = idxToAlg(to).toUpperCase();
+  if (captured === 'R') {
+    if (toAlg === 'H1') canCastleWK = false;
+    if (toAlg === 'A1') canCastleWQ = false;
+  }
+  if (captured === 'r') {
+    if (toAlg === 'H8') canCastleBK = false;
+    if (toAlg === 'A8') canCastleBQ = false;
+  }
+}
+
+
 
 function needsPromotion(from, to){
   const moving = board[from];
@@ -212,6 +266,12 @@ function render(){
 function onSquareClick(e){
   if(gameOver) return;
 
+  // Block clicks during AI delay/turn
+  if (engineThinking) { 
+    statusEl.textContent = 'Computer turn - please wait'; 
+    return; 
+  }
+
   const i = parseInt(e.currentTarget.dataset.index,10);
 
   // Valid move to a highlighted square
@@ -266,6 +326,32 @@ function movePiece(from, to, promotion){
   lastFrom = from;
   lastTo = to;
 
+  // Detect castling and move rook first
+  const fromAlg = idxToAlg(from).toUpperCase();
+  const toAlg   = idxToAlg(to).toUpperCase();
+  if (moving === 'K' && fromAlg === 'E1' && toAlg === 'G1') {
+    // White short: H1 -> F1
+    const h1 = algToIdx('H1'), f1 = algToIdx('F1');
+    board[f1] = board[h1];
+    board[h1] = '';
+  } else if (moving === 'K' && fromAlg === 'E1' && toAlg === 'C1') {
+    // White long: A1 -> D1
+    const a1 = algToIdx('A1'), d1 = algToIdx('D1');
+    board[d1] = board[a1];
+    board[a1] = '';
+  } else if (moving === 'k' && fromAlg === 'E8' && toAlg === 'G8') {
+    // Black short: H8 -> F8
+    const h8 = algToIdx('H8'), f8 = algToIdx('F8');
+    board[f8] = board[h8];
+    board[h8] = '';
+  } else if (moving === 'k' && fromAlg === 'E8' && toAlg === 'C8') {
+    // Black long: A8 -> D8
+    const a8 = algToIdx('A8'), d8 = algToIdx('D8');
+    board[d8] = board[a8];
+    board[a8] = '';
+  }
+
+
   // Decide which piece ends up on the destination (handle promotion)
   let placed = moving;
   const [tr] = rc(to);
@@ -280,13 +366,13 @@ function movePiece(from, to, promotion){
   board[to] = placed;
   board[from] = '';
 
-  // Toggle turn
-  whiteToMove = !whiteToMove;
+  // Update castling rights on king/rook moves or rook capture
+  updateCastlingRights(from, to, moving, captured);
 
-  // Sounds
+   // Toggle turn and finish as before
+  whiteToMove = !whiteToMove;
   if (captured) playSfx('capture'); else playSfx('move');
 
-  // Check/End detection
   const oppWhite = whiteToMove;
   const oppInCheck = inCheck(oppWhite);
   const oppHasMoves = sideHasAnyLegalMoves(oppWhite);
@@ -308,6 +394,9 @@ function movePiece(from, to, promotion){
   if(oppInCheck) playSfx('check');
   statusEl.textContent = oppInCheck ? 'Check!' : 'Moved';
 }
+
+ 
+
 
 
 // ---------- Rules ----------
@@ -437,66 +526,109 @@ function generatePseudoMoves(i){
   const t = pc.toLowerCase();
   let moves = [];
 
-  if(t === 'p'){
+  // Pawns
+  if (t === 'p') {
     const dir = white ? -1 : 1;
     const startRank = white ? 6 : 1;
-    if(inB(r+dir,c) && empty(idx(r+dir,c))){
+    // single push
+    if (inB(r+dir,c) && empty(idx(r+dir,c))) {
       moves.push(idx(r+dir,c));
-      if(r === startRank && empty(idx(r+2*dir,c))) moves.push(idx(r+2*dir,c));
+      // double push from start
+      if (r === startRank && empty(idx(r+2*dir,c))) moves.push(idx(r+2*dir,c));
     }
-    for(const dc of [-1,1]){
+    // captures
+    for (const dc of [-1,1]) {
       const rr = r+dir, cc = c+dc;
-      if(!inB(rr,cc)) continue;
+      if (!inB(rr,cc)) continue;
       const j = idx(rr,cc);
-      if(board[j] && !sameColor(pc, board[j])) moves.push(j);
+      if (board[j] && !sameColor(pc, board[j])) moves.push(j);
     }
   }
 
-  if(t === 'n'){
-    // ASCII hyphens only (no Unicode minus)
+  // Knights
+  if (t === 'n') {
     const deltas = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
-    for(const [dr,dc] of deltas){
-      const rr=r+dr, cc=c+dc;
-      if(!inB(rr,cc)) continue;
+    for (const [dr,dc] of deltas) {
+      const rr = r+dr, cc = c+dc;
+      if (!inB(rr,cc)) continue;
       const j = idx(rr,cc);
-      if(!board[j] || !sameColor(pc, board[j])) moves.push(j);
+      if (!board[j] || !sameColor(pc, board[j])) moves.push(j);
     }
   }
 
-  if(t === 'k'){
-    for(let dr=-1; dr<=1; dr++){
-      for(let dc=-1; dc<=1; dc++){
-        if(dr===0 && dc===0) continue;
-        const rr=r+dr, cc=c+dc;
-        if(!inB(rr,cc)) continue;
+  // King + Castling
+  if (t === 'k') {
+    // one-square king moves
+    for (let dr=-1; dr<=1; dr++){
+      for (let dc=-1; dc<=1; dc++){
+        if (dr===0 && dc===0) continue;
+        const rr = r+dr, cc = c+dc;
+        if (!inB(rr,cc)) continue;
         const j = idx(rr,cc);
-        if(!board[j] || !sameColor(pc, board[j])) moves.push(j);
+        if (!board[j] || !sameColor(pc, board[j])) moves.push(j);
       }
     }
-  }
 
-  if(t === 'b' || t === 'r' || t === 'q'){
+    // Castling additions
+    const whiteSide = white; // true if this is a White king
+    const e = algToIdx(whiteSide ? 'E1' : 'E8');
+    const f = algToIdx(whiteSide ? 'F1' : 'F8');
+    const g = algToIdx(whiteSide ? 'G1' : 'G8');
+    const d = algToIdx(whiteSide ? 'D1' : 'D8');
+    const c2 = algToIdx(whiteSide ? 'C1' : 'C8'); // avoid clashing with outer 'c'
+    const b2 = algToIdx(whiteSide ? 'B1' : 'B8');
+    const h = algToIdx(whiteSide ? 'H1' : 'H8');
+    const a = algToIdx(whiteSide ? 'A1' : 'A8');
+
+    // Only from home square and not currently in check
+    if (i === e && !inCheck(whiteSide)) {
+      // Short castle: E -> G
+      const rightsShort = whiteSide ? canCastleWK : canCastleBK;
+      if (rightsShort &&
+          empty(f) && empty(g) &&
+          board[h] === (whiteSide ? 'R' : 'r') &&
+          !squareAttackedBy(f, !whiteSide) &&
+          !squareAttackedBy(g, !whiteSide)) {
+        moves.push(g);
+      }
+
+      // Long castle: E -> C (B must also be empty)
+      const rightsLong = whiteSide ? canCastleWQ : canCastleBQ;
+      if (rightsLong &&
+          empty(d) && empty(c2) && empty(b2) &&
+          board[a] === (whiteSide ? 'R' : 'r') &&
+          !squareAttackedBy(d, !whiteSide) &&
+          !squareAttackedBy(c2, !whiteSide)) {
+        moves.push(c2);
+      }
+    }
+  } // closes king branch
+
+  // Bishops / Rooks / Queens (sliders)
+  if (t === 'b' || t === 'r' || t === 'q') {
     const dirs = [];
-    if(t==='b' || t==='q') dirs.push([-1,-1],[-1,1],[1,-1],[1,1]);
-    if(t==='r' || t==='q') dirs.push([-1,0],[1,0],[0,-1],[0,1]);
-    for(const [dr,dc] of dirs){
-      let rr=r+dr, cc=c+dc;
-      while(inB(rr,cc)){
+    if (t==='b' || t==='q') dirs.push([-1,-1],[-1,1],[1,-1],[1,1]);
+    if (t==='r' || t==='q') dirs.push([-1,0],[1,0],[0,-1],[0,1]);
+    for (const [dr,dc] of dirs){
+      let rr = r+dr, cc = c+dc;
+      while (inB(rr,cc)) {
         const j = idx(rr,cc);
-        if(!board[j]){
+        if (!board[j]) {
           moves.push(j);
-        }else{
-          if(!sameColor(pc, board[j])) moves.push(j);
+        } else {
+          if (!sameColor(pc, board[j])) moves.push(j);
           break;
         }
-        rr+=dr; cc+=dc;
+        rr += dr; cc += dc;
       }
     }
   }
 
+  // Do not include moves that capture a king (keeps with your existing rule)
   moves = moves.filter(j => !board[j] || !isKing(board[j]));
   return moves;
 }
+
 
 /* ===== AI: js-chess-engine integration ===== */
 const FILES = ['a','b','c','d','e','f','g','h'];
@@ -540,48 +672,57 @@ function onHumanMoveApplied(fromIdx, toIdx, promotion){
 }
 
 async function maybeAIMove(){
-  if (!window.aiMode || gameOver) return;
+  if (!window.aiMode || gameOver || engineThinking) return;
   const turnSide = whiteToMove ? 'white' : 'black';
   if (turnSide !== window.aiSide) return;
 
+  engineThinking = true;
+  boardEl.style.pointerEvents = 'none';
+  statusEl.textContent = 'Computer thinking...';
+
+  // Pre-move pause so the user sees it's the AI's turn
+  await delay(AI_THINK_MS);
+
   const legalPairs = allLegalPairsForTurn();
-  if (legalPairs.length === 0) return;
+  if (legalPairs.length === 0) {
+    engineThinking = false;
+    boardEl.style.pointerEvents = '';
+    return;
+  }
 
-  await new Promise(r => setTimeout(r, 120));
-
+  // Pick a move via engine (or fallback)
   let chosen = null;
-
   try {
-    const engineMap = aiGame.aiMove(window.aiLevel);   // e.g., { "E7": "E5" }
+    const engineMap = aiGame.aiMove(window.aiLevel);     // { "E7": "E5" }
     const [[FROM, TO]] = Object.entries(engineMap);
     const fromIdx = algToIdx(FROM);
     const toIdx   = algToIdx(TO);
-    if (legalPairs.some(([f,t]) => f===fromIdx && t===toIdx)) {
-      chosen = [fromIdx, toIdx];
-    }
-  } catch (e) {
-    // fall back below
-  }
+    if (legalPairs.some(([f,t]) => f===fromIdx && t===toIdx)) chosen = [fromIdx, toIdx];
+  } catch (e) { /* fallback below */ }
 
   if (!chosen) {
     let capture = null;
-    for (const [f, t] of legalPairs) {
-      if (board[t]) { capture = [f, t]; break; }
-    }
+    for (const [f, t] of legalPairs) { if (board[t]) { capture = [f, t]; break; } }
     chosen = capture || legalPairs[0];
     try {
       const FROM = idxToAlg(chosen[0]).toUpperCase();
       const TO   = idxToAlg(chosen[1]).toUpperCase();
       aiGame.move(FROM, TO);
-    } catch (e) {
-      console.warn('AI fallback sync warning:', e);
-    }
+    } catch (e) { /* ignore */ }
   }
 
   const [fromIdx, toIdx] = chosen;
   movePiece(fromIdx, toIdx);
   render();
+
+  // Post-move pause so the user clearly sees the destination
+  await delay(AI_AFTER_MOVE_MS);
+
+  engineThinking = false;
+  boardEl.style.pointerEvents = '';
+  statusEl.textContent = 'Your turn';
 }
+
 
 // Start/Restart flows
 function resetPosition(){
@@ -591,6 +732,14 @@ function resetPosition(){
   legalTargets = new Set();
   gameOver = false;
   statusEl.textContent = 'Select a piece';
+
+ // Reset castling rights
+  canCastleWK = true;
+  canCastleWQ = true;
+  canCastleBK = true;
+  canCastleBQ = true;
+  
+  // If you use last-move or promotion UI, also clear them here
   // Clear last-move highlight
   lastFrom = null;
   lastTo = null;
