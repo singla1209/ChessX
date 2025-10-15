@@ -101,6 +101,8 @@ let promotionPending = false;
 let pendingFrom = null;
 let pendingTo = null;
 let pendingIsWhite = null;
+let enPassantTarget = null;  // index of the square where en passant is possible this turn, or null
+
 
 
 
@@ -362,12 +364,35 @@ function movePiece(from, to, promotion){
     placed = promotion ? String(promotion) : (moving === 'P' ? 'Q' : 'q');
   }
 
+  // En passant execution (remove the pawn that is captured "in passing")
+if (
+  moving.toLowerCase() === 'p' &&
+  enPassantTarget !== null &&
+  to === enPassantTarget &&
+  (Math.abs(to - from) === 7 || Math.abs(to - from) === 9)
+) {
+  // The captured pawn sits behind the target square relative to the mover
+  const capIdx = whiteToMove ? to + 8 : to - 8;
+  if (capIdx >= 0 && capIdx < 64) board[capIdx] = '';
+}
+
+
   // Apply move on board
   board[to] = placed;
   board[from] = '';
 
   // Update castling rights on king/rook moves or rook capture
   updateCastlingRights(from, to, moving, captured);
+
+  // Detect if a pawn just made a double move (sets en passant target)
+if (moving === 'P' && from >= 48 && from <= 55 && to === from - 16) {
+  enPassantTarget = from - 8; // square behind the pawn
+} else if (moving === 'p' && from >= 8 && from <= 15 && to === from + 16) {
+  enPassantTarget = from + 8; // square behind the pawn
+} else {
+  enPassantTarget = null; // clear if any other move
+}
+
 
    // Toggle turn and finish as before
   whiteToMove = !whiteToMove;
@@ -543,7 +568,19 @@ function generatePseudoMoves(i){
       const j = idx(rr,cc);
       if (board[j] && !sameColor(pc, board[j])) moves.push(j);
     }
+
+    // En passant captures
+if (enPassantTarget !== null) {
+  for (const dc of [-1, 1]) {
+    const rr = r + (white ? -1 : 1);
+    const cc = c + dc;
+    if (inB(rr, cc) && idx(rr, cc) === enPassantTarget) {
+      moves.push(enPassantTarget);
+    }
   }
+}
+
+  } //end pawn branch 
 
   // Knights
   if (t === 'n') {
@@ -738,6 +775,9 @@ function resetPosition(){
   canCastleWQ = true;
   canCastleBK = true;
   canCastleBQ = true;
+
+  // Reset en passant state
+  enPassantTarget = null;
   
   // If you use last-move or promotion UI, also clear them here
   // Clear last-move highlight
