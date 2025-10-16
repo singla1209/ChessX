@@ -225,8 +225,8 @@ h1{
 
 /* Round Wooden Button */
 .button {
-  width: 120px;
-  height: 120px;
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
   border: 3px solid #020202;
   background: radial-gradient(circle at 30% 30%, #D5E0E6, #91ABBA);
@@ -246,16 +246,17 @@ h1{
 
 /* Icon inside button */
 .button i {
-  font-size: 40px;
+  font-size: 18px;
   color: #050505;
-  margin-bottom: 8px;
+  margin-bottom: 5px;
 }
 
 /* Text below */
 .label {
   color: rgb(22, 22, 22);
+  font-size: 10px;
   font-weight: bold;
   text-align: center;
-  margin-top: 10px;
-  letter-spacing: 1px;
+  margin-top: 5px;
+  letter-spacing: 0.5px;
 }
