@@ -225,12 +225,12 @@ h1{
 
 /* Round Wooden Button */
 .button {
-  width: 80px;
-  height: 80px;
+  width: 70px;
+  height: 70px;
   border-radius: 50%;
   border: 3px solid #020202;
   background: radial-gradient(circle at 30% 30%, #D5E0E6, #91ABBA);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 2px 5px rgba(16, 122, 179, 0.4);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -241,7 +241,7 @@ h1{
 
 .button:hover {
   transform: scale(1.1);
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 4px 10px rgba(47, 148, 82, 0.6);
 }
 
 /* Icon inside button */
@@ -254,7 +254,7 @@ h1{
 /* Text below */
 .label {
   color: rgb(22, 22, 22);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: bold;
   text-align: center;
   margin-top: 5px;
