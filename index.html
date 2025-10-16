@@ -4,6 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Chess — Play vs Computer</title>
+  <!-- Font Awesome for icons -->
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -21,25 +25,33 @@
     <label>Vol <input type="range" id="vol" min="0" max="1" step="0.05" value="1"></label>
   </div>
 
-  <div class="top-bar">     
+  <div class="top-bar">
+
+    
 
 
-  <div class="control-bar">
-  <!-- Undo -->
-  <button id="undo" class="btn-round" aria-label="Undo" title="Undo">
-    <svg class="icon undo" viewBox="0 0 24 24" aria-hidden="true">
-      <!-- “C” arc -->
-      <path d="M16.4 7.6 A6.6 6.6 0 1 1 9.2 5.2" class="arc"/>
-      <!-- arrow head inside the opening (points right by default) -->
-      <polygon points="17.2,12 13.8,10.6 13.8,13.4" class="head"/>
-    </svg>
-    Undo
-  </button>
+<div id="restart-game" class="button">
+  <i class="fa-solid fa-rotate-right"></i>
+  <div class="label">RESTART</div>
+</div>
 
- </div>
+<div id="" class="button">
+  <i class="fa-solid fa-chess-rook"></i>
+  <div class="label">PIECES</div>
+</div>
 
-    <button class="color-btn" id="start-game" type="button">Start Game with Computer</button>
-    <button class="color-btn" id="restart-game" type="button">Restart</button>
+<div id="start-game" class="button">
+  <i class="fa-solid fa-computer"></i>
+  <div class="label">COMPUTER</div>
+</div>
+
+<div id="undo" class="button">
+  <i class="fa-solid fa-arrow-rotate-left"></i>
+  <div class="label">UNDO</div>
+</div>
+
+
+
   </div>
 
   <div id="chessboard" aria-label="Chessboard" role="grid"></div>
