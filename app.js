@@ -36,7 +36,7 @@ const SFX = {
 };
 
 let muted = false;
-let volume = 0.6;
+let volume = 1;
 for (const k in SFX){
   SFX[k].preload = 'auto';
   SFX[k].volume = volume;
@@ -102,6 +102,8 @@ let pendingFrom = null;
 let pendingTo = null;
 let pendingIsWhite = null;
 let enPassantTarget = null;  // index of the square where en passant is possible this turn, or null
+let kingInCheckIndex = null; //for background red in box of king due to check
+
 
 
 
@@ -236,23 +238,29 @@ function render(){
 
  
 
-    sq.className = 'square ' + (((r+c)&1)===0 ? 'light' : 'dark');
+    sq.className = 'square ' + (((r+c)&1)===0 ? 'light' : 'dark'); // base color [web:276]
 
-    if (i === lastFrom || i === lastTo) {
-     sq.classList.add('last-move');
+
+    if (i === lastFrom || i === lastTo) {             // prior move [web:276]
+     sq.classList.add('last-move');             
+    }
+
+     // King-in-check highlight (red background)  // red when in check [web:276
+    if (i === kingInCheckIndex) {
+      sq.classList.add('king-in-check');
     }
 
     sq.dataset.index = i;
-
-    if(i === selected) sq.classList.add('selected');
-
+     // Selected square
+    if(i === selected) sq.classList.add('selected');    // current selection [web:276]
+    // Piece rendering
     if(board[i]){
       const piece = document.createElement('div');
       piece.className = 'piece';
       piece.textContent = PIECES[board[i]];
       sq.appendChild(piece);
     }
-
+    // Move/capture hints
     if(legalTargets.has(i)){
       const hint = document.createElement('div');
       hint.className = 'hint ' + (board[i] ? 'capture' : 'move');
@@ -418,6 +426,13 @@ if (moving === 'P' && from >= 48 && from <= 55 && to === from - 16) {
 
   if(oppInCheck) playSfx('check');
   statusEl.textContent = oppInCheck ? 'Check!' : 'Moved';
+  // Update red highlight for king in check (side to move)
+if (inCheck(whiteToMove)) {
+  kingInCheckIndex = findKingIndex(whiteToMove);
+} else {
+  kingInCheckIndex = null;
+}
+
 }
 
  
@@ -778,6 +793,8 @@ function resetPosition(){
 
   // Reset en passant state
   enPassantTarget = null;
+  kingInCheckIndex = null;
+
   
   // If you use last-move or promotion UI, also clear them here
   // Clear last-move highlight
