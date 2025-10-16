@@ -103,6 +103,9 @@ let pendingTo = null;
 let pendingIsWhite = null;
 let enPassantTarget = null;  // index of the square where en passant is possible this turn, or null
 let kingInCheckIndex = null; //for background red in box of king due to check
+let history = [];        // stack of snapshots (one per ply)
+let moveLog = [];        // [{from:'E2', to:'E4', promotion:'Q'|undefined}, ...]
+
 
 
 
@@ -170,6 +173,57 @@ function updateCastlingRights(from, to, moving, captured){
     if (toAlg === 'A8') canCastleBQ = false;
   }
 }
+
+// for undo (ctrl + Z)
+
+function snapshotState(){
+  return {
+    board: board.slice(),
+    whiteToMove,
+    canCastleWK, canCastleWQ, canCastleBK, canCastleBQ,
+    enPassantTarget,
+    lastFrom, lastTo,
+    gameOver,
+    status: statusEl.textContent
+  };
+}
+
+function restoreState(s){
+  board = s.board.slice();
+  whiteToMove = s.whiteToMove;
+  canCastleWK = s.canCastleWK; canCastleWQ = s.canCastleWQ;
+  canCastleBK = s.canCastleBK; canCastleBQ = s.canCastleBQ;
+  enPassantTarget = s.enPassantTarget;
+  lastFrom = s.lastFrom; lastTo = s.lastTo;
+  gameOver = s.gameOver;
+  statusEl.textContent = s.status;
+  selected = null;
+  legalTargets = new Set();
+}
+
+//end undo
+
+function resyncEngineFromMoveLog(){
+  if (!aiGame) return;
+  aiGame = new JCE.Game();
+  for (const m of moveLog){
+    try { aiGame.move(m.from, m.to, m.promotion); } catch(e){}
+  }
+}
+
+function undo(plys = 1){
+  if (engineThinking) return;
+  while (plys-- > 0 && history.length){
+    const snap = history.pop();
+    moveLog.pop();
+    restoreState(snap);
+  }
+  gameOver = false;
+  statusEl.textContent = 'Undo applied';
+  resyncEngineFromMoveLog();
+  render();
+}
+
 
 
 
@@ -327,10 +381,23 @@ function clearSelection(){
   if(!gameOver) statusEl.textContent = 'Select a piece';
 }
 
+
+
 // Replace your existing movePiece with this promotion-aware version
 function movePiece(from, to, promotion){
   const moving = board[from];
   const captured = board[to];
+
+// Save snapshot before applying the move (one per ply)
+  history.push(snapshotState());
+
+  // Log algebraic move so the AI engine can be rebuilt after undo
+  moveLog.push({
+    from: idxToAlg(from).toUpperCase(),
+    to:   idxToAlg(to).toUpperCase(),
+    promotion: promotion ? String(promotion).toUpperCase() : undefined
+  });
+
 
   // Last-move highlight
   lastFrom = from;
@@ -825,6 +892,14 @@ restartBtn?.addEventListener('click', () => {
   resetPosition();
   playSfx('gameStart');
 });
+
+//for undo work
+
+document.getElementById('undo')?.addEventListener('click', () => {
+  // Default: undo one ply (last move)
+  undo(1);
+});
+
 
 
 // Initial render (board visible immediately; AI activates after Start)
