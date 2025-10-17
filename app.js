@@ -6,7 +6,6 @@ const restartBtn = document.getElementById('restart-game');
 // Alias the UMD global exposed by the script tag
 const JCE = window['js-chess-engine'];  // <- add here, near the top of app.js
 
-
 // Unicode for display
 const PIECES ={
   'r':'♜','n':'♞','b':'♝','q':'♛','k':'♚','p':'♟',
@@ -106,13 +105,6 @@ let kingInCheckIndex = null; //for background red in box of king due to check
 let history = [];        // stack of snapshots (one per ply)
 let moveLog = [];        // [{from:'E2', to:'E4', promotion:'Q'|undefined}, ...]
 
-
-
-
-
-
-
-
 // AI config (local play only)
 let gameStarted = false;       // Start button flips this
 window.aiMode = false;         // AI off until Start
@@ -132,9 +124,79 @@ const delay = (ms) => new Promise(r => setTimeout(r, ms));
 // Optional: UI lock state
 let engineThinking = false;
 
+/* ===== Session persistence (app-level) ===== */
+function saveSession() {
+  try {
+    const save = {
+      board, whiteToMove,
+      canCastleWK, canCastleWQ, canCastleBK, canCastleBQ,
+      enPassantTarget,
+      lastFrom, lastTo,
+      kingInCheckIndex,
+      gameOver,
+      status: statusEl.textContent,
+      moveLog,
+      ai: { aiMode: window.aiMode, aiSide: window.aiSide, aiLevel: window.aiLevel },
+      savedAt: Date.now()
+    };
+    localStorage.setItem("chess.session", JSON.stringify(save));
+  } catch (e) { console.warn("saveSession failed:", e); }
+}
 
+function tryRestoreSession() {
+  try {
+    const raw = localStorage.getItem("chess.session");
+    if (!raw) return false;
+    const s = JSON.parse(raw);
 
+    // Restore app state
+    board = Array.isArray(s.board) ? s.board.slice() : board;
+    whiteToMove = !!s.whiteToMove;
+    canCastleWK = !!s.canCastleWK; canCastleWQ = !!s.canCastleWQ;
+    canCastleBK = !!s.canCastleBK; canCastleBQ = !!s.canCastleBQ;
+    enPassantTarget = (s.enPassantTarget ?? null);
+    lastFrom = (s.lastFrom ?? null); lastTo = (s.lastTo ?? null);
+    kingInCheckIndex = (s.kingInCheckIndex ?? null);
+    gameOver = !!s.gameOver;
+    statusEl.textContent = s.status || 'Select a piece';
 
+    // Restore AI meta + move log
+    window.aiMode = !!(s.ai && s.ai.aiMode);
+    window.aiSide = (s.ai && s.ai.aiSide) || 'black';
+    window.aiLevel = (s.ai && s.ai.aiLevel) ?? 2;
+    moveLog = Array.isArray(s.moveLog) ? s.moveLog.slice() : [];
+
+    // Rebuild engine if AI mode
+    if (window.aiMode && typeof JCE !== 'undefined' && JCE && JCE.Game) {
+      aiGame = new JCE.Game();
+      for (const m of moveLog) {
+        try { aiGame.move(m.from, m.to, m.promotion); } catch(_) {}
+      }
+    }
+
+    // Update king-in-check highlight for current side to move
+    if (inCheck(whiteToMove)) {
+      kingInCheckIndex = findKingIndex(whiteToMove);
+    } else {
+      kingInCheckIndex = null;
+    }
+
+    render();
+
+    // If AI should move now, schedule it
+    if (window.aiMode && !gameOver) {
+      const aiTurn = (whiteToMove && window.aiSide === 'white') || (!whiteToMove && window.aiSide === 'black');
+      if (aiTurn) maybeAIMove();
+    }
+
+    return true;
+  } catch (e) {
+    console.warn("tryRestoreSession failed:", e);
+    return false;
+  }
+}
+
+/* ===== Utilities ===== */
 function rc(i){ return [Math.floor(i/8), i%8]; }
 function idx(r,c){ return r*8 + c; }
 function inB(r,c){ return r>=0 && r<8 && c>=0 && c<8; }
@@ -143,8 +205,6 @@ function isBlack(pc){ return pc && pc === pc.toLowerCase(); }
 function sameColor(a,b){ if(!a || !b) return false; return isWhite(a) === isWhite(b); }
 function empty(i){ return !board[i]; }
 function isKing(pc){ return pc === 'K' || pc === 'k'; }
-
-
 
 function updateCastlingRights(from, to, moving, captured){
   // King moved
@@ -175,7 +235,6 @@ function updateCastlingRights(from, to, moving, captured){
 }
 
 // for undo (ctrl + Z)
-
 function snapshotState(){
   return {
     board: board.slice(),
@@ -222,10 +281,8 @@ function undo(plys = 1){
   statusEl.textContent = 'Undo applied';
   resyncEngineFromMoveLog();
   render();
+  saveSession();
 }
-
-
-
 
 function needsPromotion(from, to){
   const moving = board[from];
@@ -233,7 +290,6 @@ function needsPromotion(from, to){
   const [tr] = rc(to);
   return (moving === 'P' && tr === 0) || (moving === 'p' && tr === 7);
 }
-
 
 // Promotion UI: open/close + finalize
 function openPromotion(from, to){
@@ -281,8 +337,8 @@ function finalizePromotion(letter){
   closePromotion();
   clearSelection();
   render();
+  saveSession();
 }
-
 
 function render(){
   boardEl.innerHTML = '';
@@ -290,31 +346,26 @@ function render(){
     const [r,c] = rc(i);
     const sq = document.createElement('div');
 
- 
+    sq.className = 'square ' + (((r+c)&1)===0 ? 'light' : 'dark');
 
-    sq.className = 'square ' + (((r+c)&1)===0 ? 'light' : 'dark'); // base color [web:276]
-
-
-    if (i === lastFrom || i === lastTo) {             // prior move [web:276]
-     sq.classList.add('last-move');             
+    if (i === lastFrom || i === lastTo) {
+      sq.classList.add('last-move');
     }
 
-     // King-in-check highlight (red background)  // red when in check [web:276
     if (i === kingInCheckIndex) {
       sq.classList.add('king-in-check');
     }
 
     sq.dataset.index = i;
-     // Selected square
-    if(i === selected) sq.classList.add('selected');    // current selection [web:276]
-    // Piece rendering
+    if(i === selected) sq.classList.add('selected');
+
     if(board[i]){
       const piece = document.createElement('div');
       piece.className = 'piece';
       piece.textContent = PIECES[board[i]];
       sq.appendChild(piece);
     }
-    // Move/capture hints
+
     if(legalTargets.has(i)){
       const hint = document.createElement('div');
       hint.className = 'hint ' + (board[i] ? 'capture' : 'move');
@@ -331,9 +382,9 @@ function onSquareClick(e){
   if(gameOver) return;
 
   // Block clicks during AI delay/turn
-  if (engineThinking) { 
-    statusEl.textContent = 'Computer turn - please wait'; 
-    return; 
+  if (engineThinking) {
+    statusEl.textContent = 'Computer turn - please wait';
+    return;
   }
 
   const i = parseInt(e.currentTarget.dataset.index,10);
@@ -344,15 +395,16 @@ function onSquareClick(e){
 
     // If this move is a promotion, open UI and return
     if (needsPromotion(fromBefore, i)) {
-    openPromotion(fromBefore, i);
-    return;
-  }
+      openPromotion(fromBefore, i);
+      return;
+    }
 
-  // Normal (non-promotion) flow
+    // Normal (non-promotion) flow
     movePiece(selected, i);
     onHumanMoveApplied(fromBefore, i); // sync AI + maybe reply
     clearSelection();
     render();
+    saveSession();
     return;
   }
 
@@ -381,14 +433,12 @@ function clearSelection(){
   if(!gameOver) statusEl.textContent = 'Select a piece';
 }
 
-
-
 // Replace your existing movePiece with this promotion-aware version
 function movePiece(from, to, promotion){
   const moving = board[from];
   const captured = board[to];
 
-// Save snapshot before applying the move (one per ply)
+  // Save snapshot before applying the move (one per ply)
   history.push(snapshotState());
 
   // Log algebraic move so the AI engine can be rebuilt after undo
@@ -397,7 +447,6 @@ function movePiece(from, to, promotion){
     to:   idxToAlg(to).toUpperCase(),
     promotion: promotion ? String(promotion).toUpperCase() : undefined
   });
-
 
   // Last-move highlight
   lastFrom = from;
@@ -428,29 +477,25 @@ function movePiece(from, to, promotion){
     board[a8] = '';
   }
 
-
   // Decide which piece ends up on the destination (handle promotion)
   let placed = moving;
   const [tr] = rc(to);
   const promoteWhite = (moving === 'P' && tr === 0);
   const promoteBlack = (moving === 'p' && tr === 7);
   if (promoteWhite || promoteBlack) {
-    // If a promotion letter was provided (Q/R/B/N or q/r/b/n), use it; otherwise auto-queen
     placed = promotion ? String(promotion) : (moving === 'P' ? 'Q' : 'q');
   }
 
-  // En passant execution (remove the pawn that is captured "in passing")
-if (
-  moving.toLowerCase() === 'p' &&
-  enPassantTarget !== null &&
-  to === enPassantTarget &&
-  (Math.abs(to - from) === 7 || Math.abs(to - from) === 9)
-) {
-  // The captured pawn sits behind the target square relative to the mover
-  const capIdx = whiteToMove ? to + 8 : to - 8;
-  if (capIdx >= 0 && capIdx < 64) board[capIdx] = '';
-}
-
+  // En passant execution
+  if (
+    moving.toLowerCase() === 'p' &&
+    enPassantTarget !== null &&
+    to === enPassantTarget &&
+    (Math.abs(to - from) === 7 || Math.abs(to - from) === 9)
+  ) {
+    const capIdx = whiteToMove ? to + 8 : to - 8;
+    if (capIdx >= 0 && capIdx < 64) board[capIdx] = '';
+  }
 
   // Apply move on board
   board[to] = placed;
@@ -459,17 +504,16 @@ if (
   // Update castling rights on king/rook moves or rook capture
   updateCastlingRights(from, to, moving, captured);
 
-  // Detect if a pawn just made a double move (sets en passant target)
-if (moving === 'P' && from >= 48 && from <= 55 && to === from - 16) {
-  enPassantTarget = from - 8; // square behind the pawn
-} else if (moving === 'p' && from >= 8 && from <= 15 && to === from + 16) {
-  enPassantTarget = from + 8; // square behind the pawn
-} else {
-  enPassantTarget = null; // clear if any other move
-}
+  // Detect pawn double move (sets en passant target)
+  if (moving === 'P' && from >= 48 && from <= 55 && to === from - 16) {
+    enPassantTarget = from - 8;
+  } else if (moving === 'p' && from >= 8 && from <= 15 && to === from + 16) {
+    enPassantTarget = from + 8;
+  } else {
+    enPassantTarget = null;
+  }
 
-
-   // Toggle turn and finish as before
+  // Toggle turn and finish
   whiteToMove = !whiteToMove;
   if (captured) playSfx('capture'); else playSfx('move');
 
@@ -493,18 +537,14 @@ if (moving === 'P' && from >= 48 && from <= 55 && to === from - 16) {
 
   if(oppInCheck) playSfx('check');
   statusEl.textContent = oppInCheck ? 'Check!' : 'Moved';
+
   // Update red highlight for king in check (side to move)
-if (inCheck(whiteToMove)) {
-  kingInCheckIndex = findKingIndex(whiteToMove);
-} else {
-  kingInCheckIndex = null;
+  if (inCheck(whiteToMove)) {
+    kingInCheckIndex = findKingIndex(whiteToMove);
+  } else {
+    kingInCheckIndex = null;
+  }
 }
-
-}
-
- 
-
-
 
 // ---------- Rules ----------
 function legalMoves(i){
@@ -652,16 +692,15 @@ function generatePseudoMoves(i){
     }
 
     // En passant captures
-if (enPassantTarget !== null) {
-  for (const dc of [-1, 1]) {
-    const rr = r + (white ? -1 : 1);
-    const cc = c + dc;
-    if (inB(rr, cc) && idx(rr, cc) === enPassantTarget) {
-      moves.push(enPassantTarget);
+    if (enPassantTarget !== null) {
+      for (const dc of [-1, 1]) {
+        const rr = r + (white ? -1 : 1);
+        const cc = c + dc;
+        if (inB(rr, cc) && idx(rr, cc) === enPassantTarget) {
+          moves.push(enPassantTarget);
+        }
+      }
     }
-  }
-}
-
   } //end pawn branch 
 
   // Knights
@@ -694,7 +733,7 @@ if (enPassantTarget !== null) {
     const f = algToIdx(whiteSide ? 'F1' : 'F8');
     const g = algToIdx(whiteSide ? 'G1' : 'G8');
     const d = algToIdx(whiteSide ? 'D1' : 'D8');
-    const c2 = algToIdx(whiteSide ? 'C1' : 'C8'); // avoid clashing with outer 'c'
+    const c2 = algToIdx(whiteSide ? 'C1' : 'C8');
     const b2 = algToIdx(whiteSide ? 'B1' : 'B8');
     const h = algToIdx(whiteSide ? 'H1' : 'H8');
     const a = algToIdx(whiteSide ? 'A1' : 'A8');
@@ -743,11 +782,10 @@ if (enPassantTarget !== null) {
     }
   }
 
-  // Do not include moves that capture a king (keeps with your existing rule)
+  // Do not include moves that capture a king
   moves = moves.filter(j => !board[j] || !isKing(board[j]));
   return moves;
 }
-
 
 /* ===== AI: js-chess-engine integration ===== */
 const FILES = ['a','b','c','d','e','f','g','h'];
@@ -833,6 +871,7 @@ async function maybeAIMove(){
   const [fromIdx, toIdx] = chosen;
   movePiece(fromIdx, toIdx);
   render();
+  saveSession();
 
   // Post-move pause so the user clearly sees the destination
   await delay(AI_AFTER_MOVE_MS);
@@ -841,7 +880,6 @@ async function maybeAIMove(){
   boardEl.style.pointerEvents = '';
   statusEl.textContent = 'Your turn';
 }
-
 
 // Start/Restart flows
 function resetPosition(){
@@ -852,55 +890,64 @@ function resetPosition(){
   gameOver = false;
   statusEl.textContent = 'Select a piece';
 
- // Reset castling rights
+  // Reset castling rights
   canCastleWK = true;
   canCastleWQ = true;
   canCastleBK = true;
   canCastleBQ = true;
 
-  // Reset en passant state
+  // Reset en passant state and king highlight
   enPassantTarget = null;
   kingInCheckIndex = null;
 
-  
-  // If you use last-move or promotion UI, also clear them here
-  // Clear last-move highlight
+  // Clear move history/log for a fresh game
+  history = [];
+  moveLog = [];
+
+  // Clear last-move highlight and promotion UI
   lastFrom = null;
   lastTo = null;
-  // Close promotion overlay if open
   if (promotionPending) closePromotion();
+
   render();
 }
 
-// Button listeners (ensure engine script loaded first)
 startBtn?.addEventListener('click', () => {
   if (typeof window['js-chess-engine'] === 'undefined') { alert('AI engine failed to load'); return; }
   gameStarted = true;
   window.aiMode = true;
   window.aiSide = 'black';
   window.aiLevel = 2;
-  aiGame = new JCE.Game();   // was: new jsChessEngine.Game()
+  aiGame = new JCE.Game();
   resetPosition();
   playSfx('gameStart');
+  saveSession();
 });
 
 restartBtn?.addEventListener('click', () => {
   if (typeof window['js-chess-engine'] === 'undefined') { alert('AI engine failed to load'); return; }
   gameStarted = true;
   window.aiMode = true;
-  aiGame = new JCE.Game();   // was: new jsChessEngine.Game()
+  aiGame = new JCE.Game();
+  localStorage.removeItem("chess.session"); // clear saved session on restart
   resetPosition();
   playSfx('gameStart');
 });
 
 //for undo work
-
 document.getElementById('undo')?.addEventListener('click', () => {
   // Default: undo one ply (last move)
   undo(1);
 });
 
+// Optional: also persist on tab hide
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") {
+    saveSession();
+  }
+});
 
-
-// Initial render (board visible immediately; AI activates after Start)
-render();
+// Initial render or restore
+if (!tryRestoreSession()) {
+  render();
+}
