@@ -117,6 +117,8 @@ let aiGame = null;
 // Captured piece trays
 let capturedByWhite = []; // pieces White has captured (lowercase letters originally)
 let capturedByBlack = []; // pieces Black has captured (uppercase letters originally)
+let redoStack = []; // stores undone snapshots for redo
+
 
 
 // Timing controls for AI pacing
@@ -384,27 +386,53 @@ function restoreState(s){
 
 //end undo
 
-function resyncEngineFromMoveLog(){
+
+function resyncEngineFromMoveLog() {
   if (!aiGame) return;
-  aiGame = new JCE.Game();
-  for (const m of moveLog){
-    try { aiGame.move(m.from, m.to, m.promotion); } catch(e){}
+  aiGame = new JCE.Game(); // create fresh AI engine
+  for (const m of moveLog) {
+    try {
+      aiGame.move(m.from, m.to, m.promotion);
+    } catch (e) {
+      // ignore exceptions if move invalid or bad
+    }
   }
 }
 
-function undo(plys = 1){
+
+function undo(plys = 1) {
   if (engineThinking) return;
-  while (plys-- > 0 && history.length){
-    const snap = history.pop();
+  while (plys-- > 0 && history.length) {
+    redoStack.push(snapshotState());  // push current state first
+    const snap = history.pop();        // restore the previous state
     moveLog.pop();
     restoreState(snap);
   }
+  console.log('undo:', history.length, redoStack.length); // Add here
   gameOver = false;
   statusEl.textContent = 'Undo applied';
   resyncEngineFromMoveLog();
   render();
   saveSession();
 }
+
+
+function redo(plys = 1) {
+  if (engineThinking) return;
+  while (plys-- > 0 && redoStack.length) {
+    // push current state back into history
+    history.push(snapshotState());
+    const snap = redoStack.pop();
+    restoreState(snap);
+  }
+  gameOver = false;
+  statusEl.textContent = 'Redo applied';
+  resyncEngineFromMoveLog();
+  render();
+  saveSession();
+}
+
+
 
 function needsPromotion(from, to){
   const moving = board[from];
@@ -573,6 +601,9 @@ function movePiece(from, to, promotion){
 
   // Save snapshot before applying the move (one per ply)
   history.push(snapshotState());
+  // Clear redo history after any new move
+  redoStack = []; // clear redo history on any new move
+
 
   // Log algebraic move so the AI engine can be rebuilt after undo
   moveLog.push({
@@ -1092,6 +1123,12 @@ document.getElementById('undo')?.addEventListener('click', () => {
   // Default: undo one ply (last move)
   undo(1);
 });
+
+// for redo work add a click handler 
+document.getElementById('redo')?.addEventListener('click', () => {
+  redo(1);
+});
+
 
 // Optional: also persist on tab hide
 document.addEventListener("visibilitychange", () => {
