@@ -84,7 +84,7 @@ h1{
 .square .hint.capture{
   width:calc(var(--grid) - 10px);
   height:calc(var(--grid) - 10px);
-  border:4px solid var(--capture);
+  border:2px solid var(--capture);
   background:transparent;
 }
 
@@ -259,4 +259,153 @@ h1{
   text-align: center;
   margin-top: 5px;
   letter-spacing: 0.5px;
+}
+/*styling of capture pieces tray */
+.captured-panel {
+  width: 80%;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(30px, 1fr));
+  justify-content: center;
+  gap: 4px;
+  padding: 8px;
+  border-radius: 8px;
+  background: linear-gradient(to right, #ccd4dc, #e8eef2);
+  user-select: none;
+  pointer-events: none;
+}  
+
+
+
+/* 2D effect */
+#chessboard {
+  display: grid;
+  grid-template-columns: repeat(8, var(--grid));
+  grid-template-rows: repeat(8, var(--grid));
+  gap: 2px; /* space between squares */
+  background: linear-gradient(135deg, #8AAFCF 0%, #6283B9 100%);
+  border-radius: 12px;
+  padding: 4px;
+  box-shadow: 0 6px 14px rgba(30, 60, 90, 0.3);
+}
+
+.square.light {
+  background: linear-gradient(145deg, #f0f4f8, #d8e2ef);
+  box-shadow: inset 0 0 6px #ffffffaa;
+}
+
+.square.dark {
+  background: linear-gradient(145deg, #627caa, #4673b5);
+  box-shadow: inset 0 0 8px #3a5a92aa;
+}
+
+.piece {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  filter: drop-shadow(0 2px 1px rgba(0,0,0,0.2));
+}
+
+.piece:hover {
+  filter: drop-shadow(0 6px 5px rgba(0,0,0,0.35));
+  transform: scale(1.1);
+}
+
+.top-bar {
+  font-weight: 600;
+  font-size: 16px;
+  color: #1c2b46;
+  gap: 20px;
+}
+
+.button {
+  border-radius: 10px;
+  border: none;
+  padding: 12px 18px;
+  background: linear-gradient(135deg, #91abba, #d5e0e6);
+  color: #0a2233;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.button:hover {
+  background: linear-gradient(135deg, #7a9db4, #b8cbde);
+  transform: translateY(-2px);
+}
+
+.color-btn {
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15), inset 0 2px 4px rgba(255,255,255,0.7);
+}
+
+/* Example smooth move animation */
+@keyframes pieceMove {
+  from { transform: translate(0, 0); }
+  to { transform: translate(var(--move-x, 0), var(--move-y, 0)); }
+}
+
+
+
+
+
+/*  style for your AI Level slider */
+/* Container for the AI level slider and label */
+#ai-level {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 200px;
+  height: 8px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--accent), var(--dark));
+  outline: none;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  margin: 0 12px 0 8px;
+}
+
+/* Webkit (Chrome, Safari, Edge) styled thumb */
+#ai-level::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  background: var(--select);
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 6px rgba(255, 209, 102, 0.8);
+  cursor: pointer;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+  margin-top: -7px; /* center thumb on track */
+}
+
+#ai-level:hover::-webkit-slider-thumb {
+  background: #ffcc33;
+  box-shadow: 0 0 10px rgba(255, 204, 51, 0.9);
+}
+
+/* Firefox styled thumb */
+#ai-level::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  background: var(--select);
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 6px rgba(255, 209, 102, 0.8);
+  cursor: pointer;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Track style for Firefox */
+#ai-level::-moz-range-track {
+  background: linear-gradient(90deg, var(--accent), var(--dark));
+  height: 8px;
+  border-radius: 6px;
+}
+
+/* Label beside slider */
+#ai-level-label {
+  font-weight: 600;
+  font-size: 14px;
+  color: #35475c;
+  min-width: 80px;
+  text-align: left;
+  user-select: none;
 }
