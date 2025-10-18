@@ -114,6 +114,11 @@ window.aiLevel = 2;            // 0..3
 // js-chess-engine (UMD global) - created on Start/Restart
 let aiGame = null;
 
+// Captured piece trays
+let capturedByWhite = []; // pieces White has captured (lowercase letters originally)
+let capturedByBlack = []; // pieces Black has captured (uppercase letters originally)
+
+
 // Timing controls for AI pacing
 const AI_THINK_MS = 2000;        // pause before the AI selects a move (800–2000 feels natural)
 const AI_AFTER_MOVE_MS = 1000;    // pause after the AI moves to let it be seen
@@ -137,6 +142,8 @@ function saveSession() {
       status: statusEl.textContent,
       moveLog,
       ai: { aiMode: window.aiMode, aiSide: window.aiSide, aiLevel: window.aiLevel },
+      capturedByWhite,
+      capturedByBlack,
       savedAt: Date.now()
     };
     localStorage.setItem("chess.session", JSON.stringify(save));
@@ -166,6 +173,11 @@ function tryRestoreSession() {
     window.aiLevel = (s.ai && s.ai.aiLevel) ?? 2;
     moveLog = Array.isArray(s.moveLog) ? s.moveLog.slice() : [];
 
+    // Restore trays
+    capturedByWhite = Array.isArray(s.capturedByWhite) ? s.capturedByWhite.slice() : [];
+    capturedByBlack = Array.isArray(s.capturedByBlack) ? s.capturedByBlack.slice() : [];
+
+
     // Rebuild engine if AI mode
     if (window.aiMode && typeof JCE !== 'undefined' && JCE && JCE.Game) {
       aiGame = new JCE.Game();
@@ -182,6 +194,7 @@ function tryRestoreSession() {
     }
 
     render();
+    renderCapturedPanels(); // draw trays after render
 
     // If AI should move now, schedule it
     if (window.aiMode && !gameOver) {
@@ -205,6 +218,104 @@ function isBlack(pc){ return pc && pc === pc.toLowerCase(); }
 function sameColor(a,b){ if(!a || !b) return false; return isWhite(a) === isWhite(b); }
 function empty(i){ return !board[i]; }
 function isKing(pc){ return pc === 'K' || pc === 'k'; }
+
+
+// Ensure side panels exist and the board is wrapped for side-by-side layout
+function ensureCapturedPanels() {
+  let wrap = document.getElementById('board-wrap');
+  if (!wrap) {
+    wrap = document.createElement('div');
+    wrap.id = 'board-wrap';
+    wrap.style.display = 'flex';
+    wrap.style.alignItems = 'flex-start';
+    wrap.style.gap = '8px';
+    wrap.style.flexWrap = 'nowrap';          // do not wrap to a new line [web:64]
+    // Keep board from shrinking in the flex row
+    boardEl.style.flex = '0 0 auto';         // fixed-size board [web:64]
+    boardEl.style.position = 'relative';
+    boardEl.style.zIndex = '1';
+
+    const parent = boardEl.parentNode;
+    parent.insertBefore(wrap, boardEl);      // move wrap before board [web:85]
+    wrap.appendChild(boardEl);               // board inside wrapper
+  }
+
+  let left = document.getElementById('captured-black');
+  if (!left) {
+    left = document.createElement('div');
+    left.id = 'captured-black';
+    left.className = 'captured-panel';
+    left.style.flex = '0 0 56px';            // fixed width column [web:64]
+    left.style.minHeight = '56px';
+    left.style.display = 'grid';
+    left.style.gridTemplateColumns = 'repeat(2, 1fr)';
+    left.style.gap = '4px';
+    left.style.padding = '4px';
+    left.style.borderRadius = '6px';
+    left.style.background = 'rgba(0,0,0,0.06)';
+    left.style.userSelect = 'none';
+    left.style.pointerEvents = 'none';       // do not receive pointer events [web:52]
+    wrap.insertBefore(left, boardEl);        // place left of board [web:85]
+  }
+
+  let right = document.getElementById('captured-white');
+  if (!right) {
+    right = document.createElement('div');
+    right.id = 'captured-white';
+    right.className = 'captured-panel';
+    right.style.flex = '0 0 56px';           // fixed width column [web:64]
+    right.style.minHeight = '56px';
+    right.style.display = 'grid';
+    right.style.gridTemplateColumns = 'repeat(2, 1fr)';
+    right.style.gap = '4px';
+    right.style.padding = '4px';
+    right.style.borderRadius = '6px';
+    right.style.background = 'rgba(0,0,0,0.06)';
+    right.style.userSelect = 'none';
+    right.style.pointerEvents = 'none';      // do not receive pointer events [web:52]
+    const ref = boardEl.nextSibling;         // may be null; null appends to end [web:85][web:93]
+    wrap.insertBefore(right, ref);
+  }
+}
+
+
+// Render small captured piece icons into the panels
+function renderCapturedPanels() {
+  const left = document.getElementById('captured-black'); // Black's panel shows pieces White has captured
+  const right = document.getElementById('captured-white'); // White's panel shows pieces Black has captured
+  if (!left || !right) return;
+
+  left.innerHTML = '';
+  right.innerHTML = '';
+
+  // Optional: sort so higher-value pieces show first: Q R B N P
+  const order = { 'Q':5,'R':4,'B':3,'N':2,'P':1, 'q':5,'r':4,'b':3,'n':2,'p':1 };
+  const sortFn = (a,b) => (order[(a||'').toUpperCase()]||0) > (order[(b||'').toUpperCase()]||0) ? -1 : 1;
+
+  // White captured black pieces -> show black glyphs on Black's side (left)
+  const whiteCaps = capturedByWhite.slice().sort(sortFn);
+  for (const l of whiteCaps) {
+    const cell = document.createElement('div');
+    cell.style.fontSize = '20px';
+    cell.style.textAlign = 'center';
+    cell.style.lineHeight = '1.2';
+    cell.textContent = PIECES[l]; // existing mapping provides correct glyph
+    left.appendChild(cell);
+  }
+
+  // Black captured white pieces -> show white glyphs on White's side (right)
+  const blackCaps = capturedByBlack.slice().sort(sortFn);
+  for (const l of blackCaps) {
+    const cell = document.createElement('div');
+    cell.style.fontSize = '20px';
+    cell.style.textAlign = 'center';
+    cell.style.lineHeight = '1.2';
+    cell.textContent = PIECES[l];
+    right.appendChild(cell);
+  }
+}
+
+
 
 function updateCastlingRights(from, to, moving, captured){
   // King moved
@@ -243,7 +354,10 @@ function snapshotState(){
     enPassantTarget,
     lastFrom, lastTo,
     gameOver,
-    status: statusEl.textContent
+    status: statusEl.textContent,
+    // NEW: snapshot captured trays so undo restores them too
+    capturedByWhite: capturedByWhite.slice(),
+    capturedByBlack: capturedByBlack.slice()
   };
 }
 
@@ -258,6 +372,9 @@ function restoreState(s){
   statusEl.textContent = s.status;
   selected = null;
   legalTargets = new Set();
+  // NEW: restore captured trays from snapshot
+  capturedByWhite = Array.isArray(s.capturedByWhite) ? s.capturedByWhite.slice() : [];
+  capturedByBlack = Array.isArray(s.capturedByBlack) ? s.capturedByBlack.slice() : [];
 }
 
 //end undo
@@ -376,6 +493,7 @@ function render(){
     boardEl.appendChild(sq);
   }
   turnEl.textContent = 'Turn: ' + (whiteToMove ? 'White' : 'Black');
+  renderCapturedPanels(); // keep trays updated
 }
 
 function onSquareClick(e){
@@ -388,6 +506,15 @@ function onSquareClick(e){
   }
 
   const i = parseInt(e.currentTarget.dataset.index,10);
+
+  
+  // Clicking the same square cancels selection
+  if (selected !== null && i === selected) {
+    clearSelection();
+    render();
+    saveSession();
+    return;
+  }
 
   // Valid move to a highlighted square
   if(selected !== null && legalTargets.has(i)){
@@ -436,7 +563,8 @@ function clearSelection(){
 // Replace your existing movePiece with this promotion-aware version
 function movePiece(from, to, promotion){
   const moving = board[from];
-  const captured = board[to];
+  const capturedOnTo = board[to]; // piece on destination before move (may be '')
+  let enPassantCaptured = null;   // track en-passant capture letter if any
 
   // Save snapshot before applying the move (one per ply)
   history.push(snapshotState());
@@ -477,6 +605,8 @@ function movePiece(from, to, promotion){
     board[a8] = '';
   }
 
+
+
   // Decide which piece ends up on the destination (handle promotion)
   let placed = moving;
   const [tr] = rc(to);
@@ -493,16 +623,29 @@ function movePiece(from, to, promotion){
     to === enPassantTarget &&
     (Math.abs(to - from) === 7 || Math.abs(to - from) === 9)
   ) {
-    const capIdx = whiteToMove ? to + 8 : to - 8;
-    if (capIdx >= 0 && capIdx < 64) board[capIdx] = '';
+   const capIdx = whiteToMove ? to + 8 : to - 8;
+    if (capIdx >= 0 && capIdx < 64 && board[capIdx]) {
+      enPassantCaptured = board[capIdx]; // 'p' or 'P'
+      board[capIdx] = '';
+    }
   }
-
   // Apply move on board
   board[to] = placed;
   board[from] = '';
 
   // Update castling rights on king/rook moves or rook capture
-  updateCastlingRights(from, to, moving, captured);
+  updateCastlingRights(from, to, moving, capturedOnTo);
+   // Track capture into trays (destination capture or en passant)
+  if (from !== to) {
+    if (enPassantCaptured) {
+      if (isWhite(moving)) capturedByWhite.push(enPassantCaptured.toLowerCase());
+      else capturedByBlack.push(enPassantCaptured.toUpperCase());
+    } else if (capturedOnTo && capturedOnTo !== moving) {
+      if (isWhite(moving)) capturedByWhite.push(capturedOnTo.toLowerCase());
+      else capturedByBlack.push(capturedOnTo.toUpperCase());
+    }
+  }
+
 
   // Detect pawn double move (sets en passant target)
   if (moving === 'P' && from >= 48 && from <= 55 && to === from - 16) {
@@ -514,6 +657,7 @@ function movePiece(from, to, promotion){
   }
 
   // Toggle turn and finish
+  const captured = (enPassantCaptured || capturedOnTo); // <-- ADD THIS LINE
   whiteToMove = !whiteToMove;
   if (captured) playSfx('capture'); else playSfx('move');
 
@@ -904,12 +1048,16 @@ function resetPosition(){
   history = [];
   moveLog = [];
 
+  capturedByWhite = [];
+  capturedByBlack = [];
+
   // Clear last-move highlight and promotion UI
   lastFrom = null;
   lastTo = null;
   if (promotionPending) closePromotion();
 
   render();
+  renderCapturedPanels(); // clear trays in UI
 }
 
 startBtn?.addEventListener('click', () => {
@@ -946,6 +1094,10 @@ document.addEventListener("visibilitychange", () => {
     saveSession();
   }
 });
+
+// INSERT THIS LINE BEFORE FIRST RESTORE/RENDER:
+ensureCapturedPanels(); // <= create left/right captured trays before drawing the board
+
 
 // Initial render or restore
 if (!tryRestoreSession()) {
