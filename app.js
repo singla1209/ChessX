@@ -227,56 +227,61 @@ function ensureCapturedPanels() {
     wrap = document.createElement('div');
     wrap.id = 'board-wrap';
     wrap.style.display = 'flex';
-    wrap.style.alignItems = 'flex-start';
-    wrap.style.gap = '8px';
-    wrap.style.flexWrap = 'nowrap';          // do not wrap to a new line [web:64]
-    // Keep board from shrinking in the flex row
-    boardEl.style.flex = '0 0 auto';         // fixed-size board [web:64]
-    boardEl.style.position = 'relative';
-    boardEl.style.zIndex = '1';
+    wrap.style.flexDirection = 'column';        // stack vertically (top → board → bottom)
+    wrap.style.alignItems = 'center';           // center horizontally
+    wrap.style.gap = '10px';                    // space between trays and board
+    wrap.style.width = '100%';                  // full container width
 
     const parent = boardEl.parentNode;
-    parent.insertBefore(wrap, boardEl);      // move wrap before board [web:85]
-    wrap.appendChild(boardEl);               // board inside wrapper
+    parent.insertBefore(wrap, boardEl);
+    wrap.appendChild(boardEl);
   }
 
-  let left = document.getElementById('captured-black');
-  if (!left) {
-    left = document.createElement('div');
-    left.id = 'captured-black';
-    left.className = 'captured-panel';
-    left.style.flex = '0 0 56px';            // fixed width column [web:64]
-    left.style.minHeight = '56px';
-    left.style.display = 'grid';
-    left.style.gridTemplateColumns = 'repeat(2, 1fr)';
-    left.style.gap = '4px';
-    left.style.padding = '4px';
-    left.style.borderRadius = '6px';
-    left.style.background = 'rgba(0,0,0,0.06)';
-    left.style.userSelect = 'none';
-    left.style.pointerEvents = 'none';       // do not receive pointer events [web:52]
-    wrap.insertBefore(left, boardEl);        // place left of board [web:85]
+  // TOP tray (Black’s captured pieces)
+  let topTray = document.getElementById('captured-black');
+  if (!topTray) {
+    topTray = document.createElement('div');
+    topTray.id = 'captured-black';
+    topTray.className = 'captured-panel';
+    topTray.style.width = '80%';
+    topTray.style.display = 'grid';
+    topTray.style.gridTemplateColumns = 'repeat(auto-fit, minmax(30px, 1fr))';
+    topTray.style.justifyContent = 'center';
+    topTray.style.gap = '4px';
+    topTray.style.padding = '8px';
+    topTray.style.borderRadius = '8px';
+    topTray.style.background = 'linear-gradient(to right, #ccd4dc, #e8eef2)';  // soothing background
+    topTray.style.userSelect = 'none';
+    topTray.style.pointerEvents = 'none'; // don't block clicks
+    wrap.insertBefore(topTray, boardEl); // place above board
+  }
+  // BOTTOM tray (White’s captured pieces)
+  let bottomTray = document.getElementById('captured-white');
+  if (!bottomTray) {
+    bottomTray = document.createElement('div');
+    bottomTray.id = 'captured-white';
+    bottomTray.className = 'captured-panel';
+    bottomTray.style.width = '80%';
+    bottomTray.style.display = 'grid';
+    bottomTray.style.gridTemplateColumns = 'repeat(auto-fit, minmax(30px, 1fr))';
+    bottomTray.style.justifyContent = 'center';
+    bottomTray.style.gap = '4px';
+    bottomTray.style.padding = '8px';
+    bottomTray.style.borderRadius = '8px';
+    bottomTray.style.background = 'linear-gradient(to right, #ccd4dc, #e8eef2)';
+    bottomTray.style.userSelect = 'none';
+    bottomTray.style.pointerEvents = 'none';
+    wrap.appendChild(bottomTray); // place below board
   }
 
-  let right = document.getElementById('captured-white');
-  if (!right) {
-    right = document.createElement('div');
-    right.id = 'captured-white';
-    right.className = 'captured-panel';
-    right.style.flex = '0 0 56px';           // fixed width column [web:64]
-    right.style.minHeight = '56px';
-    right.style.display = 'grid';
-    right.style.gridTemplateColumns = 'repeat(2, 1fr)';
-    right.style.gap = '4px';
-    right.style.padding = '4px';
-    right.style.borderRadius = '6px';
-    right.style.background = 'rgba(0,0,0,0.06)';
-    right.style.userSelect = 'none';
-    right.style.pointerEvents = 'none';      // do not receive pointer events [web:52]
-    const ref = boardEl.nextSibling;         // may be null; null appends to end [web:85][web:93]
-    wrap.insertBefore(right, ref);
-  }
+ // Prevent board from shrinking or stretching oddly
+  boardEl.style.flex = '0 0 auto';
+  boardEl.style.position = 'relative';
+  boardEl.style.zIndex = '1';
 }
+
+
+
 
 
 // Render small captured piece icons into the panels
