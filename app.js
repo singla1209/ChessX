@@ -34,6 +34,21 @@ const SFX = {
   illegal: new Audio('sounds/illegal.mp3')
 };
 
+
+const aiLevelSlider = document.getElementById('ai-level');
+const aiLevelLabel = document.getElementById('ai-level-label');
+const LEVEL_LABELS = ['Beginner', 'Easy', 'Medium', 'Hard'];
+
+window.aiLevel = parseInt(aiLevelSlider.value, 10);
+aiLevelLabel.textContent = LEVEL_LABELS[window.aiLevel];
+
+aiLevelSlider.addEventListener('input', (e) => {
+  const val = parseInt(e.target.value, 10);
+  window.aiLevel = val;
+  aiLevelLabel.textContent = LEVEL_LABELS[val] || 'Unknown';
+});
+
+
 let muted = false;
 let volume = 1;
 for (const k in SFX){
