@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Complete Chess Rules — Beginner to Advanced</title>
+  <style>
+    :root{--bg:#0f172a;--card:#0b1220;--accent:#60a5fa;--muted:#94a3b8;--footter: #0d64e0;--glass: rgba(255,255,255,0.04)}
+    body{font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial; background:linear-gradient(180deg,#07102a 0%, #071322 100%); color:#e6eef8; margin:0; padding:24px}
+    .wrap{max-width:1000px;margin:0 auto}
+    header{display:flex;align-items:center;gap:16px}
+    h1{margin:0;font-size:28px}
+    p.lead{color:var(--muted);margin-top:6px}
+    nav.toc{background:var(--card);padding:12px;border-radius:12px;margin:18px 0}
+    nav.toc a{display:inline-block;margin:6px 10px;color:var(--accent);text-decoration:none}
+    section.card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:18px;border-radius:12px;margin-bottom:14px}
+    ol.points{counter-reset:point; padding-left:18px}
+    ol.points li{margin:8px 0}
+    li .sub{color:var(--muted);font-size:0.96em}
+    .small{font-size:0.9em;color:var(--footter)}
+    .example{background:var(--glass);padding:10px;border-radius:8px;margin-top:8px;color:#dff0ff}
+    .note{background:#133544;padding:8px;border-radius:8px;color:#cfeee6;margin-top:8px}
+    footer{margin-top:18px;color:var(--muted);font-size:0.9em}
+    .kbd{background:#032  ;padding:3px 6px;border-radius:6px;border:1px solid rgba(255,255,255,0.03);font-family:monospace}
+    @media (max-width:700px){body{padding:12px}h1{font-size:22px}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>Complete Chess Rules — Beginner → Advanced</h1>
+        <p class="lead">A step-by-step, numbered rule set you can include in your chess web app. Covers basics, special rules, etiquette, and practical strategy.</p>
+      </div>
+    </header>
+
+    <nav class="toc card">
+      <strong>Contents:</strong>
+      <a href="#basics">1‑10 Basics</a>
+      <a href="#pieces">11‑20 Pieces & Moves</a>
+      <a href="#special">21‑30 Special Moves</a>
+      <a href="#checkmate">31‑40 Check, Checkmate, Draws</a>
+      <a href="#notation">41‑45 Notation & Clock</a>
+      <a href="#etiquette">46‑48 Rules & Etiquette</a>
+      <a href="#strategy">49‑80 Strategy (Beginner → Advanced)</a>
+      <a href="#resources">Resources</a>
+    </nav>
+
+    <section id="basics" class="card">
+      <h2>1. The Chessboard</h2>
+      <ol class="points">
+        <li>1.1 The board is 8 rows (ranks) and 8 columns (files), forming 64 squares.</li>
+        <li>1.2 Squares alternate light and dark colors. The bottom-right square from White's perspective must be a light square. <span class="sub">(Remember: "white on right")</span></li>
+        <li>1.3 Files are labeled a→h (left to right from White). Ranks are 1→8 (bottom to top from White).</li>
+        <li>1.4 Initial setup: White occupies rank 1–2, Black occupies rank 7–8. See examples below for piece placement.</li>
+        <li>1.5 White moves first. Players alternate turns—one move per turn unless using multi-move variant.</li>
+        <div class="example">
+          Setup (rank 1 for White, left to right): a1 rook, b1 knight, c1 bishop, d1 queen, e1 king, f1 bishop, g1 knight, h1 rook. Pawns on rank 2 (a2–h2). Mirror for Black.
+        </div>
+      </ol>
+    </section>
+
+    <section id="pieces" class="card">
+      <h2>2. Pieces & Legal Moves</h2>
+      <ol class="points">
+        <li>2.1 Pawn
+          <div class="sub">2.1.1 Pawns move forward one square to an empty square.</div>
+          <div class="sub">2.1.2 On its first move a pawn may move forward two squares if both squares are unoccupied.</div>
+          <div class="sub">2.1.3 Pawns capture diagonally one square forward. They cannot capture straight ahead.</div>
+        </li>
+        <li>2.2 Rook
+          <div class="sub">2.2.1 Moves any number of squares vertically or horizontally, until blocked by another piece.</div>
+        </li>
+        <li>2.3 Knight
+          <div class="sub">2.3.1 Moves in an L-shape: two squares in one direction then one perpendicular (2+1). Can jump over pieces.</div>
+        </li>
+        <li>2.4 Bishop
+          <div class="sub">2.4.1 Moves any number of squares diagonally. Each bishop stays on its color.</div>
+        </li>
+        <li>2.5 Queen
+          <div class="sub">2.5.1 Combines rook and bishop moves: any number of squares vertically, horizontally, or diagonally.</div>
+        </li>
+        <li>2.6 King
+          <div class="sub">2.6.1 Moves one square in any direction (orthogonal or diagonal).</div>
+          <div class="sub">2.6.2 The king is never allowed to move into check (a square attacked by an enemy piece).</div>
+        </li>
+      </ol>
+    </section>
+
+    <section id="special" class="card">
+      <h2>3. Special Moves</h2>
+      <ol class="points">
+        <li>3.1 Castling — king + rook special move
+          <div class="sub">3.1.1 Conditions: neither king nor involved rook has moved; no pieces between king and rook; king is not in check and doesn't pass through or land on a square attacked by enemy pieces.</div>
+          <div class="sub">3.1.2 Procedure: King moves two squares toward the rook; rook moves to the square immediately on the other side of the king.</div>
+        </li>
+        <li>3.2 En passant ("in passing")
+          <div class="sub">3.2.1 If a pawn moves two squares from its starting rank and lands adjacent to an enemy pawn, the enemy pawn may capture it as if it had moved only one square. This capture must be made immediately on the very next move or the right to capture en passant is lost.</div>
+        </li>
+        <li>3.3 Pawn Promotion
+          <div class="sub">3.3.1 When a pawn reaches the opponent's back rank (8 for White, 1 for Black), it is immediately promoted to any queen, rook, bishop, or knight of the same color. Promotion to a queen is most common.</div>
+          <div class="sub">3.3.2 Promotion choice is not limited by captured pieces — you can have multiple queens.</div>
+        </li>
+      </ol>
+    </section>
+
+    <section id="checkmate" class="card">
+      <h2>4. Check, Checkmate & Draws</h2>
+      <ol class="points">
+        <li>4.1 Check
+          <div class="sub">4.1.1 A king is in check if one or more enemy pieces attack the square the king occupies.</div>
+          <div class="sub">4.1.2 A player must make a move that removes the check on their king (move the king, capture the attacking piece, or block the attack).</div>
+        </li>
+        <li>4.2 Checkmate
+          <div class="sub">4.2.1 A player is checkmated when their king is in check and no legal move removes the check. Checkmate ends the game — the player in checkmate loses.</div>
+        </li>
+        <li>4.3 Stalemate
+          <div class="sub">4.3.1 Stalemate occurs when the player to move has no legal moves and their king is not in check. Stalemate is an immediate draw.</div>
+        </li>
+        <li>4.4 Draw by insufficient material
+          <div class="sub">4.4.1 Examples: king vs king, king + bishop vs king, king + knight vs king (with no pawns or other pieces) — these positions cannot checkmate and are draws.</div>
+        </li>
+        <li>4.5 Draw by threefold repetition
+          <div class="sub">4.5.1 If the same exact position occurs three times with the same player to move and same available legal moves (including castling and en passant rights), a player can claim a draw.</div>
+        </li>
+        <li>4.6 Draw by the fifty-move rule
+          <div class="sub">4.6.1 If fifty consecutive moves (by both players — i.e., 50 full moves) occur without any pawn move or capture, a player may claim a draw.</div>
+        </li>
+        <li>4.7 Draw by agreement
+          <div class="sub">4.7.1 Players may agree to a draw at any time.</div>
+        </li>
+      </ol>
+    </section>
+
+    <section id="notation" class="card">
+      <h2>5. Notation & Clocks</h2>
+      <ol class="points">
+        <li>5.1 Algebraic notation
+          <div class="sub">5.1.1 Moves are recorded using piece letters (K,Q,R,B,N — pawns use no letter) and destination square (e.g., Nf3, e4). Captures use "x" (Qxf7). Check is "+", checkmate is "#".</div>
+        </li>
+        <li>5.2 Time controls & clocks
+          <div class="sub">5.2.1 Each player has an allotted time. If a player's time runs out, they lose the game unless the opponent has insufficient material to mate (in which case it is a draw) or other tournament rules apply.</div>
+          <div class="sub">5.2.2 Common controls: classical, rapid, blitz, bullet. Add/Increment: extra seconds added per move (e.g., +5 per move).</div>
+        </li>
+      </ol>
+    </section>
+
+    <section id="etiquette" class="card">
+      <h2>6. Rules, Illegal Moves & Etiquette</h2>
+      <ol class="points">
+        <li>6.1 Touch-move rule
+          <div class="sub">6.1.1 In over-the-board chess, if a player intentionally touches one of their pieces, they must move it if it has a legal move. If they touch an opponent's piece, they must capture it if legal. (Digital apps may relax this.)</div>
+        </li>
+        <li>6.2 Illegal moves
+          <div class="sub">6.2.1 If an illegal move is made and noticed, the position should be reverted and the player compelled to make a legal move. Tournament rules dictate penalties.</div>
+        </li>
+        <li>6.3 Not distracting
+          <div class="sub">6.3.1 Players should not disturb their opponent, take photos without permission, or make distracting noises or gestures.</div>
+        </li>
+      </ol>
+    </section>
+
+    <section id="strategy" class="card">
+      <h2>7. Strategy & Tactics (Beginner → Advanced)</h2>
+      <ol class="points">
+        <li>7.1 Beginner Principles (50–60 rating → 1000)
+          <div class="sub">7.1.1 Control the center (e4, d4, e5, d5).</div>
+          <div class="sub">7.1.2 Develop minor pieces (knights and bishops) early — don't move the same piece many times in opening without reason.</div>
+          <div class="sub">7.1.3 Castle early to safeguard king and connect the rooks.</div>
+          <div class="sub">7.1.4 Avoid early queen outings that can be chased by minor pieces.</div>
+        </li>
+
+        <li>7.2 Intermediate Tactics (1000 → 1800)
+          <div class="sub">7.2.1 Pins: a piece is pinned if moving it would expose a more valuable piece behind it. Use pins to restrict and win material.</div>
+          <div class="sub">7.2.2 Forks: attack two or more pieces at once (knight forks are common).</div>
+          <div class="sub">7.2.3 Skewers: like a reverse pin — a valuable piece is in front of a lesser piece on the same line.</div>
+          <div class="sub">7.2.4 Discovered attacks & discovered checks: move a piece to reveal an attack from behind.</div>
+        </li>
+
+        <li>7.3 Advanced Concepts (1800+)
+          <div class="sub">7.3.1 Positional evaluation: pawn structure, strong/weak squares, outposts, open files, and doubled/tripled pawns.</div>
+          <div class="sub">7.3.2 Prophylaxis: make moves that prevent opponent ideas before they happen.</div>
+          <div class="sub">7.3.3 Dynamic vs static imbalances: evaluate when to sacrifice material for activity or long-term advantages.</div>
+          <div class="sub">7.3.4 Endgame technique: mastering king activity, opposition, triangulation, and key pawn endgames (e.g., Lucena and Philidor positions).</div>
+        </li>
+
+        <li>7.4 Opening Guide (practical)
+          <div class="sub">7.4.1 Follow opening principles: develop, control center, castle, coordinate pieces, maintain pawn structure.</div>
+          <div class="sub">7.4.2 Learn plans rather than memorizing long move lists — understand typical pawn structures and piece maneuvers.</div>
+        </li>
+
+        <li>7.5 Middlegame & Planning
+          <div class="sub">7.5.1 Identify targets (weak pawns, exposed king) and create a plan: improve worst-placed piece, seize open files, restrict opponent's pieces.</div>
+        </li>
+
+        <li>7.6 Endgame Fundamentals
+          <div class="sub">7.6.1 Activate the king — it becomes a fighting piece in the endgame.</div>
+          <div class="sub">7.6.2 Pawn endgames: calculate pawn races and use opposition to gain key squares.</div>
+          <div class="sub">7.6.3 Rook endgames: try to keep rooks active; cut off the opponent king when possible.</div>
+        </li>
+
+        <li>7.7 Common Mating Patterns to Learn
+          <div class="sub">7.7.1 Back-rank mate, smothered mate, scholar's mate (watch out for it), Anastasia's mate, Arabian mate, and ladder mate using rooks/queens.</div>
+        </li>
+
+        <li>7.8 Practical Tips for Improving
+          <div class="sub">7.8.1 Solve tactical puzzles daily. Study annotated master games. Review your own games with an engine and identify recurring mistakes.</div>
+        </li>
+      </ol>
+    </section>
+
+    <section id="advanced_endgames" class="card">
+      <h2>8. Advanced Endgames & Theory (selected)</h2>
+      <ol class="points">
+        <li>8.1 Lucena position (rook + pawn vs rook)
+          <div class="sub">8.1.1 The winning technique when the attacking side's king is cut off: build a bridge with the rook and promote the pawn. Learn the standard steps.</div>
+        </li>
+        <li>8.2 Philidor position (defense in rook endgame)
+          <div class="sub">8.2.1 A drawing technique where the defending rook blocks the 7th rank to stop the attacking king/pawn coordination.</div>
+        </li>
+        <li>8.3 Minor-piece endgames
+          <div class="sub">8.3.1 Bishop pair vs bishop+knight, wrong-colored bishops with pawns on promotion square — know when these are wins/draws.</div>
+        </li>
+        <li>8.4 Tablebases and engines
+          <div class="sub">8.4.1 Tablebases give perfect play for small-piece endgames (7 pieces and fewer) — use them to study theoretical positions.</div>
+        </li>
+      </ol>
+    </section>
+
+    <section id="appendix" class="card">
+      <h2>9. Appendix — Common Rules for Online Play</h2>
+      <ol class="points">
+        <li>9.1 Automatic move validation: illegal moves are prevented by the app; provide clear messages for invalid attempts.</li>
+        <li>9.2 Draw offers and resignations: offer a UI button for draw/resign and record them in game history.</li>
+        <li>9.3 Promotion UI: let players choose promotion piece immediately when pawn reaches last rank (with both keyboard and mouse support).</li>
+        <li>9.4 Time control enforcement: handle flag fall, increment, and server-client desync carefully. Log time at server authority for rated games.</li>
+        <li>9.5 Accessibility: include keyboard controls, piece descriptions for screen readers, and high-contrast themes.</li>
+      </ol>
+    </section>
+
+    <section id="resources" class="card">
+      <h2>10. Resources & Further Learning</h2>
+      <ol class="points">
+        <li>10.1 Books for beginners: "Logical Chess: Move by Move" (Seirawan), "Bobby Fischer Teaches Chess".</li>
+        <li>10.2 Tactical training: use puzzle trainers and study tactics 15–30 minutes/day.</li>
+        <li>10.3 Engine analysis: use modern chess engines to analyze mistakes, but try to understand the reasons rather than blindly following moves.</li>
+      </ol>
+    </section>
+
+    <footer>
+      <div class="small">&copy; Designed & Developed by <b>Arvind</b></div>
+    </footer>
+  </div>
+</body>
+</html>
