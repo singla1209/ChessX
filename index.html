@@ -5,142 +5,97 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Chess — Play vs Computer</title>
   <!-- Font Awesome for icons -->
+  
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
   <link rel="stylesheet" href="style.css" />
-  <style>
-    /* --- Compact Layout Overrides --- */
-    .status-row {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      font-size: 15px;
-      font-weight: 500;
-      padding: 2px 0;
-      margin-bottom: 7px;
-    }
-    .button-row {
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      justify-content: center;
-      gap: 14px;
-      margin-bottom: 8px;
-    }
-    .button {
-      min-width: 70px;
-      min-height: 70px;
-      padding: 0;
-      margin: 0 2px;
-    }
-    #ai-level {
-      width: 120px;
-      margin: 0 10px;
-      vertical-align: middle;
-    }
-    #ai-level-label {
-      min-width: 52px;
-      font-size: 13px;
-      font-weight: 600;
-      margin-left: 2px;
-    }
-    @media (max-width: 600px) {
-      .status-row,
-      .button-row {
-        flex-direction: column;
-        gap: 7px;
-        font-size: 13px;
-      }
-      .button {
-        min-width: 60px;
-        min-height: 60px;
-      }
-      #ai-level { width: 95px; }
-    }
-    /* Small adjustment for title */
-    h1.color-btn {
-      font-size: 1.25rem;
-      margin-bottom: 8px;
-      padding: 0.5rem 1rem;
-    }
-  </style>
 </head>
 <body>
 
-  <!-- Title -->
-  <h1 class="color-btn">Chess — Game</h1>
-  
-  <!-- Status + AI control bar -->
-  <div class="status-row">
-    <span id="turn">Turn: White</span>
-    <span id="status">Click Start Game</span>
-    <label for="ai-level" style="margin-left:18px;">AI Level:</label>
-    <input type="range" id="ai-level" min="0" max="3" step="1" value="2" list="level-ticks" />
-    <span id="ai-level-label">Medium</span>
-    <datalist id="level-ticks">
-      <option value="0" label="Beginner"></option>
-      <option value="1" label="Easy"></option>
-      <option value="2" label="Medium"></option>
-      <option value="3" label="Hard"></option>
-    </datalist>
+  <h1><button class="color-btn">Chess — Game</h1></button>
+
+  <div class="top-bar">
+    <div id="turn">Turn: White</div>
+    <div id="status">Click Start Game</div>
   </div>
 
-  <!-- Button bar -->
-  <div class="button-row">
-    <div id="restart-game" class="button">
-      <i class="fa-solid fa-hand-pointer"></i>
-      <div class="label">START-MANUALLY</div>
-    </div>
-    <div id="start-game" class="button">
-      <i class="fa-solid fa-computer"></i>
-      <div class="label">COMPUTER</div>
-    </div>
-    <div id="redo" class="button">
-      <i class="fa-solid fa-arrow-rotate-right"></i>
-      <div class="label">REDO</div>
-    </div>
-    <div id="undo" class="button">
-      <i class="fa-solid fa-arrow-rotate-left"></i>
-      <div class="label">UNDO</div>
-    </div>
+  <div class="audio-bar">
+    <!-- <button id="enable-audio">Enable sound</button> 
+    <label><input type="checkbox" id="mute-toggle"> Mute</label>
+    <label>Vol <input type="range" id="vol" min="0" max="1" step="0.05" value="1"></label>  -->
   </div>
 
-  <!-- Chessboard -->
+  <label for="ai-level">AI Level:</label>
+<input type="range" id="ai-level" min="0" max="3" step="1" value="2" list="level-ticks" />
+<datalist id="level-ticks">
+  <option value="0" label="Beginner"></option>
+  <option value="1" label="Easy"></option>
+  <option value="2" label="Medium"></option>
+  <option value="3" label="Hard"></option>
+</datalist>
+<span id="ai-level-label">Medium</span>
+
+
+  <div class="top-bar">
+
+  <div id="restart-game" class="button">
+  <i class="fa-solid fa-rotate-right"></i>
+  <div class="label">START-MANUALLY</div>
+</div>
+
+<div id="start-game" class="button">
+  <i class="fa-solid fa-computer"></i>
+  <div class="label">COMPUTER</div>
+</div>
+
+
+<div id="redo" class="button">
+  <i class="fa-solid fa-arrow-rotate-right"></i>
+  <div class="label">REDO</div>
+</div>
+
+
+<div id="undo" class="button">
+  <i class="fa-solid fa-arrow-rotate-left"></i>
+  <div class="label">UNDO</div>
+</div>
+
+
+
+  </div>
+
   <div id="chessboard" aria-label="Chessboard" role="grid"></div>
 
-  <!-- Legend -->
   <div class="legend">
     <span class="dot move"></span> legal move
     <span class="dot capture"></span> capture
     <span class="dot selected"></span> selected
   </div>
-
   <!-- Pawn promotion overlay -->
-  <div id="promotion" class="promo-overlay" style="display:none" aria-modal="true" role="dialog">
-    <div class="promo-box">
-      <div class="promo-title">Promote pawn</div>
-      <div class="promo-buttons">
-        <button class="promo-btn" data-piece="q">Queen</button>
-        <button class="promo-btn" data-piece="r">Rook</button>
-        <button class="promo-btn" data-piece="b">Bishop</button>
-        <button class="promo-btn" data-piece="n">Knight</button>
-      </div>
+<div id="promotion" class="promo-overlay" style="display:none" aria-modal="true" role="dialog">
+  <div class="promo-box">
+    <div class="promo-title">Promote pawn</div>
+    <div class="promo-buttons">
+      <button class="promo-btn" data-piece="q">Queen</button>
+      <button class="promo-btn" data-piece="r">Rook</button>
+      <button class="promo-btn" data-piece="b">Bishop</button>
+      <button class="promo-btn" data-piece="n">Knight</button>
     </div>
   </div>
+</div>
 
-  <!-- Footer -->
-  <footer style="
-    margin-top:20px;
-    padding:10px;
-    text-align:center;
-    font-size:12px;
-    color:#080808;
-    background: linear-gradient(90deg, #91ABBA 0%, #D5E0E6 100%);
-    border-radius:8px;
-    box-shadow: 0 -2px 8px rgba(0,0,0,0.2);
-  ">
-    &copy; Designed & Developed by <b>Arvind</b>
-  </footer>
+<footer style="
+  margin-top:20px;
+  padding:10px;
+  text-align:center;
+  font-size:12px;
+  color:#080808;
+  background: linear-gradient(90deg, #91ABBA 0%, #D5E0E6 100%);
+  border-radius:8px;
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.2);
+">
+  &copy; Designed & Developed by <b>Arvind</b>
+</footer>
 
   <!-- Built-in AI engine (browser UMD) -->
   <script src="https://cdn.jsdelivr.net/npm/js-chess-engine@1.0.3/dist/js-chess-engine.min.js"></script>
