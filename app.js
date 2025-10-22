@@ -1124,12 +1124,11 @@ startBtn?.addEventListener('click', () => {
 });
 
 restartBtn?.addEventListener('click', () => {
-  if (typeof window['js-chess-engine'] === 'undefined') { alert('AI engine failed to load'); return; }
   gameStarted = true;
-  window.aiMode = true;
-  aiGame = new JCE.Game();
+  window.aiMode = false;  // disable AI mode
+  // No need to initialize aiGame here since AI is off
   localStorage.removeItem("chess.session"); // clear saved session on restart
-  resetPosition();
+  resetPosition();  // reset the board to start position
   playSfx('gameStart');
 });
 
