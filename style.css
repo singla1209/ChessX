@@ -409,3 +409,16 @@ h1{
   text-align: left;
   user-select: none;
 }
+
+.highlight-text {
+  display: inline-block; /* keeps it inline but allows fixed width */
+  width: 300px;          /* set your fixed width */
+  background-color: #3498db; /* Your background color */
+  color: white;
+  text-align:center;
+  padding: 8px 12px;
+  border-radius: 6px;
+  line-height: 1.4;
+  -webkit-box-decoration-break: clone; /* Ensures background continues on next line */
+  box-decoration-break: clone; /* Works in modern browsers */
+}
