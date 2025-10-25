@@ -37,7 +37,7 @@ h1 {
 }
 
 #brand img {
-  margin-top: 10px;
+  margin-top: 40px;
   width: 140px; /* ULTRA REDUCED */
   height: auto;
   display: block;
@@ -402,3 +402,4 @@ h1 {
   
   .ai-btn { padding: 2px 6px; font-size: 9px; }
 }
+
