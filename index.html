@@ -17,32 +17,34 @@
   </div> <!-- App name -->
 
   
-  <div class="top-bar highlight-text">
+  <div class="highlight-text">
     <div id="turn">Turn: White</div>
     <div id="status">Click Start Game</div>
   </div>
-
+   <!--
   <div class="audio-bar">
-    <!-- <button id="enable-audio">Enable sound</button> 
+  <button id="enable-audio">Enable sound</button> 
     <label><input type="checkbox" id="mute-toggle"> Mute</label>
-    <label>Vol <input type="range" id="vol" min="0" max="1" step="0.05" value="1"></label>  -->
+    <label>Vol <input type="range" id="vol" min="0" max="1" step="0.05" value="1"></label>  
   </div>
+-->
 
-  <label for="ai-level">AI Level:</label>
-<input type="range" id="ai-level" min="0" max="3" step="1" value="2" list="level-ticks" />
-<datalist id="level-ticks">
-  <option value="0" label="Beginner"></option>
-  <option value="1" label="Easy"></option>
-  <option value="2" label="Medium"></option>
-  <option value="3" label="Hard"></option>
-</datalist>
-<span id="ai-level-label">Medium</span>
+<div class="ai-level-container">
+  <label>AI Level:</label>
+  <div class="ai-level-buttons">
+    <button class="ai-btn" data-level="0">Beginner</button>
+    <button class="ai-btn" data-level="1">Easy</button>
+    <button class="ai-btn active" data-level="2">Medium</button>
+    <button class="ai-btn" data-level="3">Hard</button>
+  </div>
+</div>
+
 
 
   <div class="top-bar">
 
   <div id="restart-game" class="button">
-  <i class="fa-solid fa-rotate-right"></i>
+  <i class="fa-solid fa-chess-pawn"></i>
   <div class="label">START-MANUALLY</div>
 </div>
 

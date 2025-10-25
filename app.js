@@ -35,18 +35,37 @@ const SFX = {
 };
 
 
-const aiLevelSlider = document.getElementById('ai-level');
-const aiLevelLabel = document.getElementById('ai-level-label');
+// AI Level Button Handler
 const LEVEL_LABELS = ['Beginner', 'Easy', 'Medium', 'Hard'];
+window.aiLevel = 2; // Default to Medium
 
-window.aiLevel = parseInt(aiLevelSlider.value, 10);
-aiLevelLabel.textContent = LEVEL_LABELS[window.aiLevel];
-
-aiLevelSlider.addEventListener('input', (e) => {
-  const val = parseInt(e.target.value, 10);
-  window.aiLevel = val;
-  aiLevelLabel.textContent = LEVEL_LABELS[val] || 'Unknown';
+// Set initial active state
+document.addEventListener('DOMContentLoaded', function() {
+  const defaultBtn = document.querySelector('.ai-btn[data-level="2"]');
+  if (defaultBtn) {
+    defaultBtn.classList.add('active');
+  }
 });
+
+// Handle button clicks
+document.querySelectorAll('.ai-btn').forEach(btn => {
+  btn.addEventListener('click', function(e) {
+    e.preventDefault();
+    
+    // Remove active class from all buttons
+    document.querySelectorAll('.ai-btn').forEach(b => b.classList.remove('active'));
+    
+    // Add active class to clicked button
+    this.classList.add('active');
+    
+    // Update the AI level
+    window.aiLevel = parseInt(this.getAttribute('data-level'));
+    
+    console.log('AI Level changed to:', LEVEL_LABELS[window.aiLevel]);
+  });
+});
+
+
 
 
 let muted = false;
@@ -1159,3 +1178,6 @@ ensureCapturedPanels(); // <= create left/right captured trays before drawing th
 if (!tryRestoreSession()) {
   render();
 }
+
+
+
