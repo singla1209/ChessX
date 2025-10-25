@@ -37,6 +37,7 @@ h1 {
 }
 
 #brand img {
+  margin-top: 10px;
   width: 140px; /* ULTRA REDUCED */
   height: auto;
   display: block;
