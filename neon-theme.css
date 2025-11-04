@@ -43,7 +43,7 @@ h1 {
 }
 
 #brand img {
-  margin-top: 20px;
+  margin-top: 2px;
   width: 150px;
   height: auto;
   filter: drop-shadow(0 0 7px var(--accent));
@@ -59,8 +59,8 @@ h1 {
   padding: 6px 12px;
   border-radius: 12px;
   line-height: 1.4;
-  margin: 6px 0;
-  font-size: 14px;
+  margin: 1px 0;
+  font-size: 12px;
   font-weight: 600;
   box-shadow: 0 3px 8px var(--accent);
   letter-spacing: 0.4px;
@@ -72,7 +72,7 @@ h1 {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  margin: 6px auto;
+  margin: 1px auto;
   padding: 4px;
   background: #072023cc;
   border-radius: 12px;
@@ -121,11 +121,11 @@ h1 {
 /* ========== TOP BUTTON BAR ========== */
 .top-bar {
   display: flex;
-  gap: 12px;
+  gap: 5px;
   align-items: center;
-  font-size: 16px;
-  margin: 6px 0;
-  font-weight: 700;
+  font-size: 14px;
+  margin: 0px 0;
+  font-weight: 600;
   color: black;  
   text-shadow: 0 0 4px var(--accent);
 }
